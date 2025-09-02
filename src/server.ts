@@ -3,7 +3,8 @@ import cors from 'cors';
 import pino from 'pino';
 import { v4 as uuid } from 'uuid';
 import * as jwt from 'jsonwebtoken';
-import { proxyRouter } from './upstreamProxy';
+// Import ESM com extensão explícita para Node resolver corretamente em produção
+import { proxyRouter } from './upstreamProxy.js';
 
 const logger = pino({ level: process.env.LOG_LEVEL || 'info' });
 

@@ -1,4 +1,5 @@
-import { createServer } from './server';
+// Import ESM precisa da extensão .js após transpilação
+import { createServer } from './server.js';
 import { config } from 'dotenv';
 config();
 
