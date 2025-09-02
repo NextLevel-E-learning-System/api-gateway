@@ -46,6 +46,10 @@ export function createServer() {
   app.use('/auth', proxyRouter('AUTH_SERVICE_BASE_URL'));
   app.use('/users', proxyRouter('USER_SERVICE_BASE_URL'));
   app.use('/notifications', proxyRouter('NOTIFICATION_SERVICE_BASE_URL'));
+  app.use('/courses', proxyRouter('COURSE_SERVICE_BASE_URL'));
+  app.use('/assessments', proxyRouter('ASSESSMENT_SERVICE_BASE_URL'));
+  app.use('/gamification', proxyRouter('GAMIFICATION_SERVICE_BASE_URL'));
+  app.use('/progress', proxyRouter('PROGRESS_SERVICE_BASE_URL'));
 
   // Fallback
   app.use((_req, res) => res.status(404).json({ error: 'not_found' }));
