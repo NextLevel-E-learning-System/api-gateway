@@ -1,11 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { createHmac } from 'crypto';
 
 // Rotas públicas explícitas (prefixos exatos) e padrões (regex) que não exigem Authorization
 const publicStarts = [
 	'/auth/v1/login',
 	'/auth/v1/register',
-	'/auth/v1/refresh'
+	'/auth/v1/refresh',
+	'/auth/v1/logout'
 ];
 const publicPatterns = [
 	/^\/$/,                 // raiz
@@ -18,10 +20,18 @@ const publicPatterns = [
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
 	const path = req.originalUrl.split('?')[0];
 
+	// Logout bypass imediato (antes de qualquer outra lógica) — sempre segue
+	if (path === '/auth/v1/logout') {
+		(req as any).log?.debug({ path, msg:'logout_bypass_pre' }, 'Bypassing auth for logout (early)');
+		return next();
+	}
+
 	// Bypass para docs e assets swagger de qualquer serviço
 	const isSwaggerAsset = /(swagger-ui|favicon-\d+x\d+\.png|swagger-ui\.css)/.test(path);
 	const isDocs = /\/docs(\/|$)/.test(path);
 	if (isSwaggerAsset || isDocs) return next();
+
+	// (já tratado no early bypass)
 
 	if (publicStarts.some(p => path.startsWith(p)) || publicPatterns.some(r => r.test(path))) {
 		return next();
@@ -33,7 +43,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 		}
 	const token = auth.replace(/^Bearer\s+/i, '');
 	try {
-		const payload = jwt.verify(token, process.env.JWT_SECRET || 'dev-secret') as any;
+		const secret = process.env.JWT_SECRET || 'dev-secret';
+		const salt = process.env.JWT_SALT || 'default-salt';
+		const key = createHmac('sha256', secret).update(salt).digest();
+		const payload = jwt.verify(token, key) as any;
 		res.setHeader('x-user-id', payload.sub);
 		res.setHeader('x-user-roles', (payload.roles || []).join(','));
 		(req as any).user = payload;
