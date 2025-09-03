@@ -44,19 +44,48 @@ export function proxyRouter(envVar: string, servicePrefix: string) {
     }, 'proxy_request');
 
     try {
-      const headers: Record<string, string> = { 'content-type': 'application/json', 'x-correlation-id': (req as any).correlationId };
+      // Clonar headers originais (exceto hop-by-hop) preservando Authorization
+      const headers: Record<string, string> = {};
+      for (const [k, v] of Object.entries(req.headers)) {
+        if (!v) continue;
+        const key = k.toLowerCase();
+        if (['host','connection','content-length','accept-encoding'].includes(key)) continue;
+        if (Array.isArray(v)) headers[key] = v.join(','); else headers[key] = String(v);
+      }
+      headers['x-correlation-id'] = (req as any).correlationId;
+      // Garantir content-type só quando houver body
+      if (!headers['content-type'] && req.body && Object.keys(req.body).length) {
+        headers['content-type'] = 'application/json';
+      }
       if ((req as any).user) {
         headers['x-user-id'] = (req as any).user.sub;
         headers['x-user-roles'] = ((req as any).user.roles || []).join(',');
       }
+      const hasBody = !['GET','HEAD'].includes(req.method) && req.body && Object.keys(req.body).length > 0;
       const upstream = await fetch(url, {
         method: req.method,
         headers,
-        body: ['GET', 'HEAD'].includes(req.method) ? undefined : JSON.stringify(req.body)
+        body: hasBody ? JSON.stringify(req.body) : undefined
       });
       const text = await upstream.text();
       upstream.headers.forEach((value, key) => {
-        if (key.toLowerCase() === 'transfer-encoding') return; // evitar problemas de streaming chunked
+        if (key.toLowerCase() === 'transfer-encoding') return;
+        if (key.toLowerCase() === 'set-cookie') {
+          if (process.env.LOG_LEVEL === 'debug') {
+            // eslint-disable-next-line no-console
+            console.debug('[gateway] repassando Set-Cookie do upstream', value);
+          }
+          // fetch em Node pode combinar múltiplos Set-Cookie — garantimos repasse bruto
+          const existing = res.getHeader('Set-Cookie');
+          if (existing) {
+            const arr: string[] = Array.isArray(existing) ? existing.map(e=>String(e)) : [String(existing)];
+            arr.push(String(value));
+            res.setHeader('Set-Cookie', arr);
+          } else {
+            res.setHeader('Set-Cookie', String(value));
+          }
+          return;
+        }
         res.setHeader(key, value);
       });
       res.status(upstream.status).send(text);

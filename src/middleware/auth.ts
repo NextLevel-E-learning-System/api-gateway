@@ -6,8 +6,7 @@ import { createHash } from 'crypto';
 const publicStarts = [
 	'/auth/v1/login',
 	'/auth/v1/register',
-	'/auth/v1/refresh',
-	'/auth/v1/logout'
+	'/auth/v1/refresh'
 ];
 const publicPatterns = [
 	/^\/$/,                 // raiz
@@ -20,11 +19,7 @@ const publicPatterns = [
 export function authMiddleware(req: Request, res: Response, next: NextFunction) {
 	const path = req.originalUrl.split('?')[0];
 
-	// Logout bypass imediato (antes de qualquer outra lógica) — sempre segue
-	if (path === '/auth/v1/logout') {
-		(req as any).log?.debug({ path, msg:'logout_bypass_pre' }, 'Bypassing auth for logout (early)');
-		return next();
-	}
+	// Logout agora exige Authorization (sem bypass)
 
 	// Bypass para docs e assets swagger de qualquer serviço
 	const isSwaggerAsset = /(swagger-ui|favicon-\d+x\d+\.png|swagger-ui\.css)/.test(path);

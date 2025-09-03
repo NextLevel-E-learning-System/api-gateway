@@ -1,6 +1,11 @@
 import { Router } from 'express';
 import { proxyRouter } from '../upstreamProxy.js';
 export const proxyRoutes = Router();
+
+// Intercepta respostas para repassar Set-Cookie (se upstream proxy suportar hook interno)
+// Caso proxyRouter já trate, este bloco pode ser removido após verificação.
+// (Se precisar integrar: ajustar upstreamProxy para aceitar onProxyRes.)
+
 proxyRoutes.use('/auth', proxyRouter('AUTH_SERVICE_BASE_URL','auth'));
 proxyRoutes.use('/users', proxyRouter('USER_SERVICE_BASE_URL','users'));
 proxyRoutes.use('/notifications', proxyRouter('NOTIFICATION_SERVICE_BASE_URL','notifications'));
