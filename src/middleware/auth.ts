@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import * as jwt from 'jsonwebtoken';
-import { createHmac } from 'crypto';
+import { createHash } from 'crypto';
 
 // Rotas públicas explícitas (prefixos exatos) e padrões (regex) que não exigem Authorization
 const publicStarts = [
@@ -44,8 +44,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 	const token = auth.replace(/^Bearer\s+/i, '');
 	try {
 		const secret = process.env.JWT_SECRET || 'dev-secret';
-		const salt = process.env.JWT_SALT || 'default-salt';
-		const key = createHmac('sha256', secret).update(salt).digest();
+		const key = createHash('sha256').update(secret).digest();
 		const payload = jwt.verify(token, key) as any;
 		res.setHeader('x-user-id', payload.sub);
 		res.setHeader('x-user-roles', (payload.roles || []).join(','));
