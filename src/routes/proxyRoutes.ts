@@ -8,6 +8,7 @@ proxyRoutes.use('/courses', proxyRouter('COURSE_SERVICE_BASE_URL'));
 proxyRoutes.use('/assessments', proxyRouter('ASSESSMENT_SERVICE_BASE_URL'));
 proxyRoutes.use('/gamification', proxyRouter('GAMIFICATION_SERVICE_BASE_URL'));
 proxyRoutes.use('/progress', proxyRouter('PROGRESS_SERVICE_BASE_URL'));
+// Lista de documentações central JSON (fora do swagger principal): /docs/services
 proxyRoutes.get('/docs/services', (_req,res)=>{
   res.json({ services:[
     { name:'auth', url:'/auth/docs' },

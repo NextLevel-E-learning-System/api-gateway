@@ -5,7 +5,14 @@ export function proxyRouter(envVar: string) {
   const base = process.env[envVar];
   router.all('*', async (req: Request, res: Response) => {
     if (!base) return res.status(500).json({ error: 'upstream_not_configured', upstream: envVar });
-    const url = base + req.originalUrl.replace(/^\/(auth|users|notifications)/, '');
+  // Remove apenas o primeiro segmento de serviço, preservando o restante do path
+    let pathAfterService = req.originalUrl.replace(/^\/(auth|users|notifications|courses|assessments|gamification|progress)/, '');
+    // Reescrever assets do swagger (gerados com caminho relativo a partir de /docs) adicionando prefixo /docs
+    if (/^\/(swagger-ui.*|favicon-.*\.png)$/.test(pathAfterService)) {
+      pathAfterService = '/docs' + pathAfterService; // upstream espera /docs/swagger-ui.css
+    }
+    const url = base + pathAfterService;
+  (req as any).log?.debug({ original:req.originalUrl, upstream:url }, 'proxy_request');
     try {
       const headers: Record<string, string> = { 'content-type': 'application/json', 'x-correlation-id': (req as any).correlationId };
       if ((req as any).user) {

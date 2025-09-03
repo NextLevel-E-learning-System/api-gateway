@@ -8,4 +8,18 @@ import { healthRouter } from './routes/healthRoutes.js';
 import { proxyRoutes } from './routes/proxyRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { loadOpenApi } from './config/openapi.js';
-export function createServer(){ const app=express(); app.use(express.json()); app.use(cors({ origin:(process.env.ALLOWED_ORIGINS||'*').split(','), credentials:true })); app.use((req,_res,next)=>{ (req as any).log=logger; next(); }); app.use(correlationId); app.use(authMiddleware); const spec=loadOpenApi('API Gateway'); app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec)); app.use(healthRouter); app.use(proxyRoutes); app.use(errorHandler); return app; }
+export function createServer(){
+	const app=express();
+	app.use(express.json());
+	app.use(cors({ origin:(process.env.ALLOWED_ORIGINS||'*').split(','), credentials:true }));
+	app.use((req,_res,next)=>{ (req as any).log=logger; next(); });
+	app.use(correlationId);
+	app.use(authMiddleware);
+	app.get('/', (_req,res)=> res.json({ message:'gateway root', docs:'/docs', servicesIndex:'/docs/services' }));
+	const spec=loadOpenApi('API Gateway');
+	app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec));
+	app.use(healthRouter);
+	app.use(proxyRoutes);
+	app.use(errorHandler);
+	return app;
+}
