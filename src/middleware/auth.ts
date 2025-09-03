@@ -1,5 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
-import * as jwt from 'jsonwebtoken';
+// jsonwebtoken é CommonJS; usar default import e acessar verify via objeto para evitar erros em ESM.
+import jwt from 'jsonwebtoken';
 import { createHash } from 'crypto';
 
 // Rotas públicas explícitas (prefixos exatos) e padrões (regex) que não exigem Authorization
@@ -40,13 +41,18 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 	try {
 		const secret = process.env.JWT_SECRET || 'dev-secret';
 		const key = createHash('sha256').update(secret).digest();
-		const payload = jwt.verify(token, key) as any;
+		const anyJwt: any = jwt as any;
+		const verifyFn = anyJwt.verify || (anyJwt.default && anyJwt.default.verify);
+		if (typeof verifyFn !== 'function') {
+			throw new TypeError('jsonwebtoken_verify_not_function');
+		}
+		const payload = verifyFn(token, key) as any;
 		res.setHeader('x-user-id', payload.sub);
 		res.setHeader('x-user-roles', (payload.roles || []).join(','));
 		(req as any).user = payload;
 		return next();
-		} catch {
-			(req as any).log?.warn({ path, msg:'auth_invalid_token' }, 'Invalid token');
+		} catch (e: any) {
+			(req as any).log?.warn({ path, msg:'auth_invalid_token', errName: e?.name, errMessage: e?.message }, 'Invalid token');
 			return res.status(401).json({ error: 'invalid_token' });
 	}
 }
