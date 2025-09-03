@@ -5,8 +5,7 @@ import * as jwt from 'jsonwebtoken';
 const publicStarts = [
 	'/auth/v1/login',
 	'/auth/v1/register',
-	'/health/live',
-	'/health/ready'
+	'/auth/v1/refresh'
 ];
 const publicPatterns = [
 	/^\/$/,                 // raiz
