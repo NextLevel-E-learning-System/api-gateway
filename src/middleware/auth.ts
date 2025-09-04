@@ -7,7 +7,8 @@ import { createHash } from 'crypto';
 const publicStarts = [
 	'/auth/v1/login',
 	'/auth/v1/register',
-	'/auth/v1/refresh'
+	'/auth/v1/refresh',
+	'/auth/v1/reset-password'
 ];
 const publicPatterns = [
 	/^\/$/,                 // raiz
@@ -28,6 +29,11 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 	if (isSwaggerAsset || isDocs) return next();
 
 	// (já tratado no early bypass)
+
+	// Rota pública específica do user-service: somente GET /users/v1/departments
+	if (req.method === 'GET' && path === '/users/v1/departments') {
+		return next();
+	}
 
 	if (publicStarts.some(p => path.startsWith(p)) || publicPatterns.some(r => r.test(path))) {
 		return next();

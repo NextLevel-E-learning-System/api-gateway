@@ -87,6 +87,34 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/auth/v1/reset-password': {
+        post: {
+          tags: ['Authentication'],
+          summary: 'Reset de senha',
+          description: 'Gera nova senha enviando email (identificação por email ou userId). Invalida tokens ativos.',
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  description: 'Informe email OU userId',
+                  properties: {
+                    email: { type: 'string', format: 'email' },
+                    userId: { type: 'string', format: 'uuid' }
+                  },
+                  minProperties: 1
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Senha redefinida (email enviado se existir)' },
+            '404': { description: 'Usuário não encontrado' },
+            '400': { description: 'Parâmetros ausentes' }
+          }
+        }
+      },
       '/auth/v1/refresh': {
         post: {
           tags: ['Authentication'],
