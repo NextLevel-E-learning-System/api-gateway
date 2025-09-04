@@ -20,8 +20,6 @@ permissions:
 
 env:
   IMAGE_NAME: ghcr.io/${{ github.repository }}
-  DOCKER_CONTEXT: .
-  DOCKER_FILE: ./Dockerfile
 
 jobs:
   build-and-push:
@@ -56,8 +54,8 @@ jobs:
       - name: Build & Push
         uses: docker/build-push-action@v6
         with:
-          context: ${{ env.DOCKER_CONTEXT }}
-          file: ${{ env.DOCKER_FILE }}
+          context: .
+          file: ./Dockerfile
           platforms: linux/amd64
           push: true
           tags: ${{ steps.meta.outputs.tags }}
