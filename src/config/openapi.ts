@@ -6,12 +6,6 @@ export function loadOpenApi(title='API Gateway'){
       version:'1.0.0',
       description: 'Gateway para todos os microserviços do NextLevel E-learning System'
     }, 
-    servers: [
-      {
-        url: process.env.GATEWAY_BASE_URL || 'http://localhost:3333',
-        description: 'API Gateway'
-      }
-    ],
     paths:{ 
       // Auth Service Routes - /auth/v1
       '/auth/v1/login': {
