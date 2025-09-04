@@ -506,7 +506,6 @@ export function loadOpenApi(title='API Gateway'){
       }
     },
     tags: [
-      { name: 'Health', description: 'Endpoints de saúde do gateway' },
       { name: 'Authentication', description: 'Autenticação e autorização' },
       { name: 'Users', description: 'Gerenciamento de usuários' },
       { name: 'Courses', description: 'Gerenciamento de cursos' },

@@ -4,7 +4,6 @@ import swaggerUi from 'swagger-ui-express';
 import { logger } from './config/logger.js';
 import { correlationId } from './middleware/correlationId.js';
 import { authMiddleware } from './middleware/auth.js';
-import { healthRouter } from './routes/healthRoutes.js';
 import { proxyRoutes } from './routes/proxyRoutes.js';
 import { errorHandler } from './middleware/errorHandler.js';
 import { loadOpenApi } from './config/openapi.js';
@@ -23,7 +22,6 @@ export function createServer(){
 	app.get('/', (_req,res)=> res.json({ message:'gateway root', docs:'/docs', servicesIndex:'/docs/services' }));
 	const spec=loadOpenApi('API Gateway');
 	app.use('/docs', swaggerUi.serve, swaggerUi.setup(spec));
-	app.use(healthRouter);
 	app.use(proxyRoutes);
 	app.use(errorHandler);
 	return app;
