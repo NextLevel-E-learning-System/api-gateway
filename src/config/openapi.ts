@@ -254,6 +254,146 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/courses/v1/{codigo}/duplicar': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Duplicar curso',
+          description: 'Cria uma cópia do curso (módulos ainda não clonados).',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '201': { description: 'Duplicado' },
+            '404': { description: 'Curso não encontrado' }
+          }
+        }
+      },
+      '/courses/v1/{codigo}/ativar': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Ativar curso',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Ativado' },
+            '404': { description: 'Curso não encontrado' }
+          }
+        }
+      },
+      '/courses/v1/{codigo}/desativar': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Desativar curso',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Desativado' },
+            '404': { description: 'Curso não encontrado' }
+          }
+        }
+      },
+      '/courses/v1/{codigo}/modulos': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Listar módulos',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Lista de módulos' },
+            '404': { description: 'Curso não encontrado' }
+          }
+        },
+        post: {
+          tags: ['Courses'],
+          summary: 'Adicionar módulo',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    titulo: { type: 'string' },
+                    descricao: { type: 'string' },
+                    ordem: { type: 'integer' },
+                    xp: { type: 'integer' }
+                  },
+                  required: ['titulo']
+                }
+              }
+            },
+            responses: {
+              '201': { description: 'Criado' },
+              '404': { description: 'Curso não encontrado' }
+            }
+          }
+        }
+      },
+      '/courses/v1/{codigo}/inscrever': {
+        post: {
+          tags: ['Courses'],
+          summary: 'Inscrever usuário',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    userId: { type: 'string' }
+                  },
+                  required: ['userId']
+                }
+              }
+            },
+            responses: {
+              '201': { description: 'Inscrito' },
+              '409': { description: 'Já inscrito' },
+              '404': { description: 'Curso não encontrado' }
+            }
+          }
+        }
+      },
+      '/courses/v1/catalogo': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Catálogo',
+          parameters: [
+            { name: 'categoria', in: 'query', schema: { type: 'string' } },
+            { name: 'instrutor', in: 'query', schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Lista de cursos' }
+          }
+        }
+      },
+      '/courses/v1/dashboard/instrutor': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Dashboard instrutor',
+          responses: {
+            '200': { description: 'OK' }
+          }
+        }
+      },
+      '/courses/v1/dashboard/funcionario': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Dashboard funcionário',
+          responses: {
+            '200': { description: 'OK' }
+          }
+        }
+      },
       // Assessment Service Routes - /assessments/v1
       '/assessments/v1': {
         post: {
@@ -390,6 +530,21 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/progress/v1/inscricoes/{id}/modulos/{moduloId}/concluir': {
+        post: {
+          tags: ['Progress'],
+          summary: 'Concluir módulo',
+          description: 'Marca módulo como concluído e recalcula progresso (emite eventos).',
+          parameters: [
+            { name: 'id', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'moduloId', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '201': { description: 'Módulo concluído' },
+            '404': { description: 'Inscrição ou módulo não encontrado' }
+          }
+        }
+      },
       // Gamification Service Routes - /gamification/v1
       '/gamification/v1/badges': {
         post: {
@@ -439,6 +594,42 @@ export function loadOpenApi(title='API Gateway'){
           responses: {
             '200': { description: 'Detalhes do badge' },
             '404': { description: 'Badge não encontrado' }
+          }
+        }
+      },
+      '/gamification/v1/me': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Perfil gamification',
+          description: 'Retorna XP, nível e badges do usuário (usa cabeçalho X-User-Id enquanto autenticação real não é integrada).',
+          parameters: [
+            { name: 'X-User-Id', in: 'header', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Perfil retornado' }
+          }
+        }
+      },
+      '/gamification/v1/ranking/global': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Ranking global',
+          description: 'Top usuários por XP.',
+          responses: {
+            '200': { description: 'Ranking retornado' }
+          }
+        }
+      },
+      '/gamification/v1/ranking/departamento': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Ranking por departamento',
+          description: 'Ranking filtrado (placeholder até relação usuário-departamento na gamificação).',
+          parameters: [
+            { name: 'X-Departamento-Id', in: 'header', required: true, schema: { type: 'string' } }
+          ],
+          responses: {
+            '200': { description: 'Ranking retornado' }
           }
         }
       },
@@ -504,4 +695,3 @@ export function loadOpenApi(title='API Gateway'){
     ]
   }; 
 }
-  
