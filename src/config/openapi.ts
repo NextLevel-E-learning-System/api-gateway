@@ -476,7 +476,7 @@ export function loadOpenApi(title='API Gateway'){
           summary: 'Submeter respostas',
           description: 'Submete respostas do usuário e realiza correção automática.',
           parameters: [ { name:'codigo', in:'path', required:true, schema:{ type:'string' } } ],
-          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['userId','respostas'], properties: { userId:{type:'string'}, respostas:{ type:'array', items:{ type:'object', required:['questao_id','resposta'], properties:{ questao_id:{type:'string'}, resposta:{type:'string'} } } } } } } } },
+          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['userId','attemptId','respostas'], properties: { userId:{type:'string'}, attemptId:{type:'string'}, respostas:{ type:'array', items:{ type:'object', required:['questao_id','resposta'], properties:{ questao_id:{type:'string'}, resposta:{type:'string'} } } } } } } } },
           responses: { '200': { description: 'Resultado' }, '404': { description: 'Avaliação não encontrada' } }
         }
   },
@@ -485,11 +485,17 @@ export function loadOpenApi(title='API Gateway'){
     get: { tags:['Assessments'], summary:'Listar questões', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
   },
   '/assessments/v1/{codigo}/attempts/start': {
-    post: { tags:['Assessments'], summary:'Iniciar tentativa', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:false, content:{ 'application/json': { schema:{ type:'object', properties:{ userId:{type:'string'} } } } } }, responses:{ '201': { description:'Iniciada'} } }
+    post: { tags:['Assessments'], summary:'Iniciar tentativa', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:false, content:{ 'application/json': { schema:{ type:'object', properties:{ userId:{type:'string'} } } } } }, responses:{ '201': { description:'Iniciada (recovery true se tentativa de recuperação)' }, '409': { description:'Limite de tentativas ou já aprovado' } } }
   },
   '/assessments/v1/questions/{questaoId}/alternatives': {
         post: { tags:['Assessments'], summary:'Adicionar alternativa', parameters:[{ name:'questaoId', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['texto','correta'], properties:{ texto:{type:'string'}, correta:{type:'boolean'} } } } } }, responses:{ '201': { description:'Criado' } } },
         get: { tags:['Assessments'], summary:'Listar alternativas', parameters:[{ name:'questaoId', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
+  },
+  '/assessments/v1/attempts/{attemptId}/dissertative': {
+    get: { tags:['Assessments'], summary:'Listar respostas dissertativas', parameters:[{ name:'attemptId', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada' }, '404': { description:'Tentativa não encontrada' }, '409': { description:'Não pendente de revisão' } } }
+  },
+  '/assessments/v1/attempts/{attemptId}/review': {
+    patch: { tags:['Assessments'], summary:'Revisar tentativa (dissertativas)', parameters:[{ name:'attemptId', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['scores'], properties:{ notaMinima:{type:'number'}, scores:{ type:'array', items:{ type:'object', required:['respostaId','pontuacao'], properties:{ respostaId:{type:'string'}, pontuacao:{type:'number'} } } } } } } } }, responses:{ '200': { description:'Revisado' }, '404': { description:'Tentativa não encontrada' }, '409': { description:'Não pendente de revisão' } } }
   },
   // Fim Assessment
       // Progress Service Routes - /progress/v1
@@ -602,7 +608,7 @@ export function loadOpenApi(title='API Gateway'){
       '/progress/v1/certificates/user/{userId}': {
         get: {
           tags: ['Progress'],
-          summary: 'Listar certificados do usuário (placeholder)',
+          summary: 'Listar certificados do usuário',
           parameters: [ { name:'userId', in:'path', required:true, schema:{ type:'string' } } ],
           responses: { '200': { description: 'Lista retornada' } }
         }
@@ -610,9 +616,25 @@ export function loadOpenApi(title='API Gateway'){
       '/progress/v1/certificates/enrollment/{enrollmentId}': {
         post: {
           tags: ['Progress'],
-          summary: 'Emitir certificado (placeholder)',
+          summary: 'Emitir ou recuperar certificado',
           parameters: [ { name:'enrollmentId', in:'path', required:true, schema:{ type:'string' } } ],
-          responses: { '201': { description: 'Certificado emitido' } }
+          responses: { '201': { description: 'Certificado emitido ou já existente' }, '404': { description:'Inscrição não encontrada' }, '409': { description:'Curso não concluído' } }
+        }
+      },
+      '/progress/v1/certificates/enrollment/{enrollmentId}/pdf': {
+        get: {
+          tags: ['Progress'],
+          summary: 'Gerar ou obter link PDF do certificado',
+          parameters: [ { name:'enrollmentId', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Detalhes/URL do PDF' }, '404': { description: 'Inscrição não encontrada' } }
+        }
+      },
+      '/progress/v1/certificates/validate/{code}': {
+        get: {
+          tags: ['Progress'],
+          summary: 'Validar certificado (código + hash)',
+          parameters: [ { name:'code', in:'path', required:true, schema:{ type:'string' } }, { name:'hash', in:'query', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description:'Resultado validação' }, '400': { description:'Parâmetro ausente' }, '404': { description:'Não encontrado' } }
         }
       },
       '/progress/v1/tracks': {
