@@ -38,11 +38,23 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
 	if (publicStarts.some(p => path.startsWith(p)) || publicPatterns.some(r => r.test(path))) {
 		return next();
 	}
-	const auth = req.header('authorization');
-		if (!auth) {
-			(req as any).log?.warn({ path, msg:'auth_missing_header' }, 'Missing Authorization header');
-			return res.status(401).json({ error: 'missing_authorization_header' });
-		}
+	let auth = req.header('authorization');
+	// Fallback: cookie accessToken
+	if(!auth && req.headers.cookie){
+		try {
+			const cookies = Object.fromEntries(req.headers.cookie.split(';').map(c=>{ const [k,...v]=c.trim().split('='); return [k, decodeURIComponent(v.join('='))]; }));
+			if(cookies.accessToken){ auth = `Bearer ${cookies.accessToken}`; }
+		} catch(_e) { /* ignore parse errors */ }
+	}
+	// Fallback: query param ?access_token=
+	if(!auth && (req as any).query?.access_token){
+		auth = `Bearer ${(req as any).query.access_token}`;
+	}
+	(req as any).log?.debug({ path, hasAuthHeader: !!req.header('authorization'), usedCookie: !!(req.headers.cookie), authSnippet: auth?.substring(0,25) }, 'auth_header_received');
+	if (!auth) {
+		(req as any).log?.warn({ path, msg:'auth_missing_header' }, 'Missing Authorization header');
+		return res.status(401).json({ error: 'missing_authorization_header' });
+	}
 	const token = auth.replace(/^Bearer\s+/i, '');
 	try {
 		const secret = process.env.JWT_SECRET || 'dev-secret';

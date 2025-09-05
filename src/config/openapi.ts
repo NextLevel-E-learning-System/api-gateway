@@ -684,6 +684,7 @@ export function loadOpenApi(title='API Gateway'){
         }
       }
     },
+    security: [ { bearerAuth: [] } ],
     tags: [
       { name: 'Authentication', description: 'Autenticação e autorização' },
       { name: 'Users', description: 'Gerenciamento de usuários' },
