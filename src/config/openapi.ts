@@ -199,40 +199,6 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
-      '/users/v1/{id}/xp': {
-        patch: {
-          tags: ['Users'],
-          summary: 'Atualizar XP do usuário',
-          description: 'Atualiza os pontos de experiência do usuário',
-          security: [{ bearerAuth: [] }],
-          parameters: [
-            {
-              name: 'id',
-              in: 'path',
-              required: true,
-              schema: { type: 'string' }
-            }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    delta: { type: 'integer', description: 'Quantidade de XP a ser adicionada/removida' }
-                  },
-                  required: ['delta']
-                }
-              }
-            }
-          },
-          responses: {
-            '200': { description: 'XP atualizado com sucesso' },
-            '401': { description: 'Não autorizado' }
-          }
-        }
-      },
       // Course Service Routes - /courses/v1
       '/courses/v1': {
         post: {
