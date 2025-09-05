@@ -252,6 +252,21 @@ export function loadOpenApi(title='API Gateway'){
             '200': { description: 'Detalhes do curso' },
             '404': { description: 'Curso não encontrado' }
           }
+        },
+        patch: {
+          tags: ['Courses'],
+          summary: 'Atualizar curso',
+          description: 'Atualiza dados do curso (bloqueado se houver inscrições ativas).',
+          parameters: [ { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } } ],
+          requestBody: {
+            required: true,
+            content: { 'application/json': { schema: { type: 'object', properties: { titulo:{type:'string'}, descricao:{type:'string'}, categoria_id:{type:'string'}, duracao_estimada:{type:'integer'}, xp_oferecido:{type:'integer'}, nivel_dificuldade:{type:'string'} } } } }
+          },
+          responses: {
+            '200': { description: 'Atualizado' },
+            '404': { description: 'Curso não encontrado' },
+            '409': { description: 'Curso possui inscrições ativas' }
+          }
         }
       },
       '/courses/v1/{codigo}/duplicar': {
@@ -268,30 +283,26 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
-      '/courses/v1/{codigo}/ativar': {
-        post: {
+      '/courses/v1/{codigo}/active': {
+        patch: {
           tags: ['Courses'],
-          summary: 'Ativar curso',
-          parameters: [
-            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          responses: {
-            '200': { description: 'Ativado' },
-            '404': { description: 'Curso não encontrado' }
-          }
+          summary: 'Alterar status ativo',
+          parameters: [ { name: 'codigo', in:'path', required:true, schema:{ type:'string' } } ],
+          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['active'], properties: { active:{ type:'boolean' } } } } } },
+          responses: { '200': { description: 'Status atualizado' }, '404': { description: 'Curso não encontrado' } }
         }
       },
-      '/courses/v1/{codigo}/desativar': {
+      '/courses/v1/categories': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Listar categorias',
+          responses: { '200': { description: 'Lista de categorias' } }
+        },
         post: {
           tags: ['Courses'],
-          summary: 'Desativar curso',
-          parameters: [
-            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          responses: {
-            '200': { description: 'Desativado' },
-            '404': { description: 'Curso não encontrado' }
-          }
+            summary: 'Criar categoria',
+            requestBody: { required: true, content: { 'application/json': { schema: { type:'object', required:['codigo','nome'], properties: { codigo:{type:'string'}, nome:{type:'string'}, descricao:{type:'string'}, cor_hex:{type:'string'} } } } } },
+            responses: { '201': { description: 'Criado' }, '409': { description: 'Duplicado' } }
         }
       },
       '/courses/v1/{codigo}/modulos': {
@@ -333,6 +344,21 @@ export function loadOpenApi(title='API Gateway'){
               '404': { description: 'Curso não encontrado' }
             }
           }
+        }
+      },
+      '/courses/v1/modules/{moduleId}/materials': {
+        get: {
+          tags: ['Courses'],
+          summary: 'Listar materiais do módulo',
+          parameters: [ { name: 'moduleId', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Lista de materiais' }, '404': { description: 'Módulo não encontrado' } }
+        },
+        post: {
+          tags: ['Courses'],
+          summary: 'Adicionar material',
+          parameters: [ { name: 'moduleId', in:'path', required:true, schema:{ type:'string' } } ],
+          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['nome_arquivo','tipo_arquivo','url_storage'], properties: { nome_arquivo:{type:'string'}, tipo_arquivo:{type:'string', enum:['pdf','video','presentation']}, url_storage:{type:'string'}, tamanho:{type:'integer'} } } } } },
+          responses: { '201': { description: 'Criado' }, '400': { description: 'Tipo inválido' } }
         }
       },
       '/courses/v1/{codigo}/inscrever': {
@@ -496,6 +522,14 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/progress/v1/inscricoes/usuario/{userId}': {
+        get: {
+          tags: ['Progress'],
+          summary: 'Listar inscrições do usuário',
+          parameters: [ { name: 'userId', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Lista retornada' } }
+        }
+      },
       '/progress/v1/inscricoes/{id}/progresso': {
         patch: {
           tags: ['Progress'],
@@ -638,6 +672,14 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/gamification/v1/ranking/monthly': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Ranking mensal',
+          description: 'Ranking limitado ao mês atual.',
+          responses: { '200': { description: 'Ranking retornado' } }
+        }
+      },
       '/gamification/v1/ranking/departamento': {
         get: {
           tags: ['Gamification'],
@@ -649,6 +691,22 @@ export function loadOpenApi(title='API Gateway'){
           responses: {
             '200': { description: 'Ranking retornado' }
           }
+        }
+      },
+      '/gamification/v1/users/{id}/badges': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Badges do usuário',
+          parameters: [ { name: 'id', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Lista de badges' }, '404': { description: 'Usuário não encontrado' } }
+        }
+      },
+      '/gamification/v1/users/{id}/xp-history': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Histórico de XP do usuário',
+          parameters: [ { name: 'id', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Histórico retornado' } }
         }
       },
       // Notification Service Routes - /notifications/v1
