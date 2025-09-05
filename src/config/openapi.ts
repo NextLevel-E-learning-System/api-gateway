@@ -700,6 +700,13 @@ export function loadOpenApi(title='API Gateway'){
           scheme: 'bearer',
           bearerFormat: 'JWT'
         }
+      },
+      'x-events': {
+        'course.module.completed.v1': { summary: 'Módulo concluído', payload: { type:'object', properties:{ enrollmentId:{type:'string'}, courseId:{type:'string'}, userId:{type:'string'}, moduleId:{type:'string'}, progressPercent:{type:'number'}, completedCourse:{type:'boolean'} } } },
+        'course.completed.v1': { summary: 'Curso concluído', payload: { type:'object', properties:{ enrollmentId:{type:'string'}, courseId:{type:'string'}, userId:{type:'string'}, totalProgress:{type:'number'} } } },
+        'xp.adjusted.v1': { summary: 'XP ajustado', payload: { type:'object', properties:{ userId:{type:'string'}, delta:{type:'number'}, newTotalXp:{type:'number'}, level:{type:'string'}, sourceEventId:{type:'string'} } } },
+        'assessment.passed.v1': { summary: 'Avaliação aprovada', payload: { type:'object', properties:{ assessmentCode:{type:'string'}, courseId:{type:'string'}, userId:{type:'string'}, score:{type:'number'}, passed:{type:'boolean'} } } },
+        'assessment.failed.v1': { summary: 'Avaliação reprovada', payload: { type:'object', properties:{ assessmentCode:{type:'string'}, courseId:{type:'string'}, userId:{type:'string'}, score:{type:'number'}, passed:{type:'boolean'} } } }
       }
     },
     security: [ { bearerAuth: [] } ],
