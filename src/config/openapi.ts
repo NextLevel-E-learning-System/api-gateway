@@ -451,8 +451,8 @@ export function loadOpenApi(title='API Gateway'){
             '401': { description: 'Não autorizado' }
           }
         }
-      },
-      '/assessments/v1/{codigo}': {
+  },
+  '/assessments/v1/{codigo}': {
         get: {
           tags: ['Assessments'],
           summary: 'Obter avaliação',
@@ -470,8 +470,25 @@ export function loadOpenApi(title='API Gateway'){
             '200': { description: 'Detalhes da avaliação' },
             '404': { description: 'Avaliação não encontrada' }
           }
+  },
+  post: {
+          tags: ['Assessments'],
+          summary: 'Submeter respostas',
+          description: 'Submete respostas do usuário e realiza correção automática.',
+          parameters: [ { name:'codigo', in:'path', required:true, schema:{ type:'string' } } ],
+          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['userId','respostas'], properties: { userId:{type:'string'}, respostas:{ type:'array', items:{ type:'object', required:['questao_id','resposta'], properties:{ questao_id:{type:'string'}, resposta:{type:'string'} } } } } } } } },
+          responses: { '200': { description: 'Resultado' }, '404': { description: 'Avaliação não encontrada' } }
         }
-      },
+  },
+  '/assessments/v1/{codigo}/questions': {
+        post: { tags:['Assessments'], summary:'Adicionar questão', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['enunciado','tipo'], properties:{ enunciado:{type:'string'}, tipo:{type:'string', enum:['MULTIPLA_ESCOLHA','VERDADEIRO_FALSO']}, opcoes_resposta:{type:'array', items:{type:'string'}}, resposta_correta:{type:'string'}, peso:{type:'number'} } } } } }, responses:{ '201': { description:'Criado' } } },
+        get: { tags:['Assessments'], summary:'Listar questões', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
+  },
+  '/assessments/v1/questions/{questaoId}/alternatives': {
+        post: { tags:['Assessments'], summary:'Adicionar alternativa', parameters:[{ name:'questaoId', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['texto','correta'], properties:{ texto:{type:'string'}, correta:{type:'boolean'} } } } } }, responses:{ '201': { description:'Criado' } } },
+        get: { tags:['Assessments'], summary:'Listar alternativas', parameters:[{ name:'questaoId', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
+  },
+  // Fim Assessment
       // Progress Service Routes - /progress/v1
       '/progress/v1/inscricoes': {
         post: {
@@ -578,6 +595,28 @@ export function loadOpenApi(title='API Gateway'){
             '404': { description: 'Inscrição ou módulo não encontrado' }
           }
         }
+      },
+      '/progress/v1/certificates/user/{userId}': {
+        get: {
+          tags: ['Progress'],
+          summary: 'Listar certificados do usuário (placeholder)',
+          parameters: [ { name:'userId', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '200': { description: 'Lista retornada' } }
+        }
+      },
+      '/progress/v1/certificates/enrollment/{enrollmentId}': {
+        post: {
+          tags: ['Progress'],
+          summary: 'Emitir certificado (placeholder)',
+          parameters: [ { name:'enrollmentId', in:'path', required:true, schema:{ type:'string' } } ],
+          responses: { '201': { description: 'Certificado emitido' } }
+        }
+      },
+      '/progress/v1/tracks': {
+        get: { tags: ['Progress'], summary: 'Listar trilhas (placeholder)', responses: { '200': { description: 'Lista retornada' } } }
+      },
+      '/progress/v1/tracks/user/{userId}': {
+        get: { tags: ['Progress'], summary: 'Progresso em trilhas do usuário (placeholder)', parameters: [ { name:'userId', in:'path', required:true, schema:{ type:'string' } } ], responses: { '200': { description: 'Dados retornados' } } }
       },
       // Gamification Service Routes - /gamification/v1
       '/gamification/v1/badges': {
@@ -750,8 +789,8 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       }
-    },
-    components: {
+  },
+  components: {
       securitySchemes: {
         bearerAuth: {
           type: 'http',
