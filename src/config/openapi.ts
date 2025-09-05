@@ -610,6 +610,24 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/gamification/v1/conquistas': {
+        get: {
+          tags: ['Gamification'],
+          summary: 'Conquistas do usuário',
+          description: 'Lista badges e histórico recente de XP (usa cabeçalho X-User-Id).',
+          parameters: [ { name: 'X-User-Id', in: 'header', required: true, schema: { type: 'string' } } ],
+          responses: { '200': { description: 'Conquistas retornadas' } }
+        }
+      },
+      '/gamification/v1/badges/auto/process': {
+        post: {
+          tags: ['Gamification'],
+          summary: 'Reprocessar badges automáticos',
+          description: 'Força avaliação de badges automáticos para todos ou um usuário (header X-User-Id opcional).',
+          parameters: [ { name: 'X-User-Id', in: 'header', required: false, schema: { type: 'string' } } ],
+          responses: { '202': { description: 'Processamento iniciado' } }
+        }
+      },
       '/gamification/v1/ranking/global': {
         get: {
           tags: ['Gamification'],
