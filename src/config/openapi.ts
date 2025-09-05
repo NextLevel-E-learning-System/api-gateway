@@ -481,8 +481,11 @@ export function loadOpenApi(title='API Gateway'){
         }
   },
   '/assessments/v1/{codigo}/questions': {
-        post: { tags:['Assessments'], summary:'Adicionar questão', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['enunciado','tipo'], properties:{ enunciado:{type:'string'}, tipo:{type:'string', enum:['MULTIPLA_ESCOLHA','VERDADEIRO_FALSO']}, opcoes_resposta:{type:'array', items:{type:'string'}}, resposta_correta:{type:'string'}, peso:{type:'number'} } } } } }, responses:{ '201': { description:'Criado' } } },
-        get: { tags:['Assessments'], summary:'Listar questões', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
+    post: { tags:['Assessments'], summary:'Adicionar questão', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['enunciado','tipo'], properties:{ enunciado:{type:'string'}, tipo:{type:'string', enum:['MULTIPLA_ESCOLHA','VERDADEIRO_FALSO','DISSERTATIVA']}, opcoes_resposta:{type:'array', items:{type:'string'}}, resposta_correta:{type:'string'}, peso:{type:'number'} } } } } }, responses:{ '201': { description:'Criado' } } },
+    get: { tags:['Assessments'], summary:'Listar questões', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], responses:{ '200': { description:'Lista retornada'} } }
+  },
+  '/assessments/v1/{codigo}/attempts/start': {
+    post: { tags:['Assessments'], summary:'Iniciar tentativa', parameters:[{ name:'codigo', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:false, content:{ 'application/json': { schema:{ type:'object', properties:{ userId:{type:'string'} } } } } }, responses:{ '201': { description:'Iniciada'} } }
   },
   '/assessments/v1/questions/{questaoId}/alternatives': {
         post: { tags:['Assessments'], summary:'Adicionar alternativa', parameters:[{ name:'questaoId', in:'path', required:true, schema:{ type:'string' } }], requestBody:{ required:true, content:{ 'application/json': { schema:{ type:'object', required:['texto','correta'], properties:{ texto:{type:'string'}, correta:{type:'boolean'} } } } } }, responses:{ '201': { description:'Criado' } } },
