@@ -199,6 +199,49 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/users/v1/instructors': {
+        get: {
+          tags: ['Users'],
+          summary: 'Listar instrutores',
+          description: 'Retorna lista de instrutores ativos com especialidades e avaliações',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Lista de instrutores' }
+          }
+        }
+      },
+      '/users/v1/{id}/achievements': {
+        get: {
+          tags: ['Users'],
+          summary: 'Obter conquistas do usuário',
+          description: 'Retorna histórico de conquistas, badges e XP total do usuário',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          responses: {
+            '200': { description: 'Conquistas do usuário' },
+            '404': { description: 'Usuário não encontrado' }
+          }
+        }
+      },
+      '/users/v1/admin/dashboard': {
+        get: {
+          tags: ['Users'],
+          summary: 'Dashboard administrativo (ADMIN)',
+          description: 'Métricas gerais: usuários ativos, cursos populares, taxa de conclusão, alertas',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Métricas e dados do dashboard administrativo' },
+            '403': { description: 'Acesso negado - apenas ADMIN' }
+          }
+        }
+      },
       // Course Service Routes - /courses/v1
       '/courses/v1': {
         post: {
