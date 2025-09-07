@@ -135,6 +135,73 @@ export function loadOpenApi(title='API Gateway'){
           responses: {
             '200': { description: 'Lista de departamentos' }
           }
+        },
+        post: {
+          tags: ['Users'],
+          summary: 'Criar departamento (ADMIN)',
+          description: 'Cria um novo departamento. Requer role ADMIN.',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    codigo: { type: 'string', minLength: 1, description: 'Código único do departamento' },
+                    nome: { type: 'string', minLength: 1, description: 'Nome do departamento' },
+                    gestor_id: { type: 'string', format: 'uuid', description: 'ID do gestor (opcional)' }
+                  },
+                  required: ['codigo', 'nome']
+                }
+              }
+            }
+          },
+          responses: {
+            '201': { description: 'Departamento criado com sucesso' },
+            '400': { description: 'Dados inválidos' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado - apenas ADMIN' },
+            '409': { description: 'Código já existe' }
+          }
+        }
+      },
+      '/users/v1/departments/{codigo}': {
+        patch: {
+          tags: ['Users'],
+          summary: 'Atualizar departamento (ADMIN)',
+          description: 'Atualiza informações de um departamento. Requer role ADMIN.',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'codigo',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' },
+              description: 'Código do departamento'
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    nome: { type: 'string', minLength: 1, description: 'Nome do departamento' },
+                    gestor_id: { type: 'string', format: 'uuid', description: 'ID do gestor' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Departamento atualizado com sucesso' },
+            '400': { description: 'Dados inválidos' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado - apenas ADMIN' },
+            '404': { description: 'Departamento não encontrado' }
+          }
         }
       },
       '/users/v1/me': {
@@ -150,6 +217,25 @@ export function loadOpenApi(title='API Gateway'){
         }
       },
       '/users/v1': {
+        get: {
+          tags: ['Users'],
+          summary: 'Listar usuários (ADMIN)',
+          description: 'Lista todos os usuários com filtros. Requer role ADMIN.',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            { name: 'status', in: 'query', schema: { type: 'string', enum: ['ATIVO', 'INATIVO'] }, description: 'Filtrar por status' },
+            { name: 'departamento_id', in: 'query', schema: { type: 'string' }, description: 'Filtrar por departamento' },
+            { name: 'tipo_usuario', in: 'query', schema: { type: 'string', enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'] }, description: 'Filtrar por tipo' },
+            { name: 'search', in: 'query', schema: { type: 'string' }, description: 'Buscar por nome, email ou CPF' },
+            { name: 'limit', in: 'query', schema: { type: 'integer', default: 50, minimum: 1, maximum: 200 }, description: 'Limite de resultados' },
+            { name: 'offset', in: 'query', schema: { type: 'integer', default: 0, minimum: 0 }, description: 'Offset para paginação' }
+          ],
+          responses: {
+            '200': { description: 'Lista de usuários com total' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado - apenas ADMIN' }
+          }
+        },
         post: {
           tags: ['Users'],
           summary: 'Completar cadastro',
@@ -164,7 +250,7 @@ export function loadOpenApi(title='API Gateway'){
                   properties: {
                     nome: { type: 'string', minLength: 1, description: 'Nome completo' },
                     cpf: { type: 'string', pattern: '^\\d{11}$', description: 'CPF com 11 dígitos' },
-                    email: { type: 'string', format: 'email', description: 'Email (apenas INSTRUTOR pode alterar)' },
+                    email: { type: 'string', format: 'email', description: 'Email (apenas ADMIN pode alterar)' },
                     departamento_id: { type: 'string', minLength: 1, description: 'ID do departamento' },
                     cargo: { type: 'string', minLength: 1, description: 'Cargo do funcionário' }
                   },
@@ -185,6 +271,7 @@ export function loadOpenApi(title='API Gateway'){
           tags: ['Users'],
           summary: 'Obter usuário por ID',
           description: 'Retorna informações de um usuário específico',
+          security: [{ bearerAuth: [] }],
           parameters: [
             {
               name: 'id',
@@ -195,6 +282,48 @@ export function loadOpenApi(title='API Gateway'){
           ],
           responses: {
             '200': { description: 'Dados do usuário' },
+            '404': { description: 'Usuário não encontrado' }
+          }
+        },
+        patch: {
+          tags: ['Users'],
+          summary: 'Atualizar usuário (ADMIN ou próprio)',
+          description: 'Atualização completa de usuário. ADMIN pode alterar tudo, usuário comum apenas dados básicos. Para promover a INSTRUTOR enviar tipo_usuario=INSTRUTOR.',
+          security: [{ bearerAuth: [] }],
+          parameters: [
+            {
+              name: 'id',
+              in: 'path',
+              required: true,
+              schema: { type: 'string' }
+            }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    nome: { type: 'string', minLength: 1, description: 'Nome completo' },
+                    cpf: { type: 'string', pattern: '^\\d{11}$', description: 'CPF com 11 dígitos' },
+                    email: { type: 'string', format: 'email', description: 'Email (apenas ADMIN)' },
+                    departamento_id: { type: 'string', description: 'ID do departamento' },
+                    cargo: { type: 'string', description: 'Cargo do funcionário' },
+                    status: { type: 'string', enum: ['ATIVO', 'INATIVO'], description: 'Status (apenas ADMIN)' },
+                    tipo_usuario: { type: 'string', enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'], description: 'Tipo de usuário (apenas ADMIN)' },
+                    biografia: { type: 'string', description: 'Biografia (apenas para INSTRUTOR)' },
+                    cursos_id: { type: 'array', items: { type: 'string' }, description: 'Especialidades do instrutor' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Usuário atualizado com sucesso' },
+            '400': { description: 'Dados inválidos' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Sem permissão para este campo' },
             '404': { description: 'Usuário não encontrado' }
           }
         }
