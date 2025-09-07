@@ -220,7 +220,7 @@ export function loadOpenApi(title='API Gateway'){
                     instrutor_id: { type: 'string', format: 'uuid', description: 'ID do instrutor' },
                     duracao_estimada: { type: 'integer', minimum: 1, description: 'Duração estimada em horas' },
                     xp_oferecido: { type: 'integer', minimum: 1, description: 'XP oferecido ao completar' },
-                    nivel_dificuldade: { type: 'string', description: 'Nível de dificuldade' },
+                    nivel_dificuldade: { type: 'string', enum: ['Básico', 'Intermediário', 'Avançado'], description: 'Nível de dificuldade' },
                     pre_requisitos: { type: 'array', items: { type: 'string' }, description: 'Lista de pré-requisitos' }
                   },
                   required: ['codigo', 'titulo']
@@ -260,7 +260,7 @@ export function loadOpenApi(title='API Gateway'){
           parameters: [ { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } } ],
           requestBody: {
             required: true,
-            content: { 'application/json': { schema: { type: 'object', properties: { titulo:{type:'string'}, descricao:{type:'string'}, categoria_id:{type:'string'}, duracao_estimada:{type:'integer'}, xp_oferecido:{type:'integer'}, nivel_dificuldade:{type:'string'} } } } }
+            content: { 'application/json': { schema: { type: 'object', properties: { titulo:{type:'string'}, descricao:{type:'string'}, categoria_id:{type:'string'}, duracao_estimada:{type:'integer'}, xp_oferecido:{type:'integer'}, nivel_dificuldade:{type:'string', enum:['Básico','Intermediário','Avançado']} } } } }
           },
           responses: {
             '200': { description: 'Atualizado' },
