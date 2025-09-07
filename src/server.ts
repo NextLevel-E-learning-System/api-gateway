@@ -9,12 +9,14 @@ import { errorHandler } from './middleware/errorHandler.js';
 import { loadOpenApi } from './config/openapi.js';
 export function createServer(){
 	const app=express();
-	app.use(express.json());
-	  const allowAll = process.env.ALLOW_ALL_ORIGINS === 'true';
-  app.use(cors({
-    origin: allowAll ? (origin, cb) => cb(null, true) : (process.env.CORS_ORIGINS || '').split(',').filter(Boolean),
-    credentials: true
-  }));
+	// Aumentar limite para uploads de arquivos (50MB)
+	app.use(express.json({ limit: '50mb' }));
+	app.use(express.urlencoded({ limit: '50mb', extended: true }));
+	const allowAll = process.env.ALLOW_ALL_ORIGINS === 'true';
+	app.use(cors({
+		origin: allowAll ? (origin, cb) => cb(null, true) : (process.env.CORS_ORIGINS || '').split(',').filter(Boolean),
+		credentials: true
+	}));
 	app.use((req,_res,next)=>{ (req as any).log=logger; next(); });
 	app.use(correlationId);
 	app.use(authMiddleware);

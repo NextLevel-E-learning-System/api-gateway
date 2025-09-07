@@ -359,14 +359,135 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
+      '/users/v1/dashboard': {
+        get: {
+          tags: ['Users'],
+          summary: 'Dashboard inteligente baseado no perfil',
+          description: '🎯 **Dashboard único que adapta conteúdo baseado no role do usuário:**\n\n👤 **FUNCIONARIO** (R03): XP, nível, badges, cursos em andamento/concluídos/disponíveis, ranking departamental, timeline de atividades\n\n👨‍🏫 **INSTRUTOR** (R11): Cursos que ministra, estatísticas de conclusão, avaliações pendentes, métricas de performance\n\n👑 **ADMIN** (R17): Métricas gerais da plataforma, cursos populares, engajamento por departamento, alertas do sistema',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { 
+              description: 'Dashboard específico baseado no role do usuário',
+              content: {
+                'application/json': {
+                  examples: {
+                    funcionario: {
+                      summary: 'Dashboard Funcionário',
+                      value: {
+                        tipo_dashboard: 'funcionario',
+                        xp_atual: 2500,
+                        nivel_atual: 3,
+                        proximo_badge: 'Ouro',
+                        progresso_nivel: 50,
+                        cursos_em_andamento: [{ codigo: 'JS101', titulo: 'JavaScript Básico', progresso: 75 }],
+                        cursos_concluidos: [{ codigo: 'HTML101', titulo: 'HTML Básico', xp_oferecido: 100 }],
+                        menu_operacoes: [{ nome: 'Catálogo de Cursos', url: '/catalogo', icone: 'book' }]
+                      }
+                    },
+                    instrutor: {
+                      summary: 'Dashboard Instrutor',
+                      value: {
+                        tipo_dashboard: 'instrutor',
+                        cursos: [{ codigo: 'JS101', titulo: 'JavaScript Básico', inscritos: 25, taxa_conclusao: 80 }],
+                        pendentes_correcao: 5,
+                        metricas: { taxa_conclusao_geral: 75, total_alunos: 150 }
+                      }
+                    },
+                    administrador: {
+                      summary: 'Dashboard Administrador',
+                      value: {
+                        tipo_dashboard: 'administrador',
+                        metricas_gerais: { usuarios_ativos: 500, total_cursos: 45, taxa_conclusao_geral: 78.5 },
+                        cursos_populares: [{ codigo: 'JS101', titulo: 'JavaScript', inscricoes: 200 }],
+                        alertas: [{ tipo: 'Curso com baixa avaliação', descricao: 'Curso XYZ precisa de atenção' }]
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado' }
+          }
+        }
+      },
+      '/users/v1/dashboard/funcionario': {
+        get: {
+          tags: ['Users'],
+          summary: 'Dashboard específico do funcionário',
+          description: 'Força exibição do dashboard de funcionário independente do role',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Dashboard do funcionário com XP, cursos e gamificação' },
+            '401': { description: 'Não autorizado' }
+          }
+        }
+      },
+      '/users/v1/dashboard/instrutor': {
+        get: {
+          tags: ['Users'],
+          summary: 'Dashboard específico do instrutor',
+          description: 'Dashboard para instrutores com estatísticas dos cursos que ministram',
+          security: [{ bearerAuth: [] }],
+          responses: {
+            '200': { description: 'Dashboard do instrutor com cursos e métricas' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado - requer role INSTRUTOR' }
+          }
+        }
+      },
       '/users/v1/admin/dashboard': {
         get: {
           tags: ['Users'],
           summary: 'Dashboard administrativo (ADMIN)',
-          description: 'Métricas gerais: usuários ativos, cursos populares, taxa de conclusão, alertas',
+          description: 'Dashboard completo para administradores com métricas gerais da plataforma, alertas e análises de engajamento',
           security: [{ bearerAuth: [] }],
           responses: {
-            '200': { description: 'Métricas e dados do dashboard administrativo' },
+            '200': { 
+              description: 'Dashboard administrativo completo',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      tipo_dashboard: { type: 'string', example: 'administrador' },
+                      metricas_gerais: {
+                        type: 'object',
+                        properties: {
+                          usuarios_ativos: { type: 'integer' },
+                          total_usuarios: { type: 'integer' },
+                          total_cursos: { type: 'integer' },
+                          taxa_conclusao_geral: { type: 'number' }
+                        }
+                      },
+                      cursos_populares: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            codigo: { type: 'string' },
+                            titulo: { type: 'string' },
+                            inscricoes: { type: 'integer' }
+                          }
+                        }
+                      },
+                      alertas: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            tipo: { type: 'string' },
+                            descricao: { type: 'string' },
+                            prioridade: { type: 'string', enum: ['alta', 'media', 'baixa'] }
+                          }
+                        }
+                      }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Não autorizado' },
             '403': { description: 'Acesso negado - apenas ADMIN' }
           }
         }
@@ -561,10 +682,52 @@ export function loadOpenApi(title='API Gateway'){
         },
         post: {
           tags: ['Courses'],
-          summary: 'Adicionar material',
+          summary: 'Upload de material para o módulo',
+          description: 'Faz upload direto de arquivo via Base64. O sistema detecta automaticamente: tipo, tamanho e salva no storage correto.',
           parameters: [ { name: 'moduloId', in:'path', required:true, schema:{ type:'string' } } ],
-          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['nome_arquivo','tipo_arquivo'], properties: { nome_arquivo:{type:'string'}, tipo_arquivo:{type:'string', enum:['pdf','video','presentation']}, url_storage:{type:'string'}, tamanho:{type:'integer'}, base64:{type:'string', description:'Conteúdo do arquivo em base64'} } } } } },
-          responses: { '201': { description: 'Material criado' }, '400': { description: 'Tipo inválido' } }
+          requestBody: { 
+            required: true, 
+            content: { 
+              'application/json': { 
+                schema: { 
+                  type: 'object', 
+                  required: ['nome_arquivo', 'base64'], 
+                  properties: { 
+                    nome_arquivo: { 
+                      type: 'string', 
+                      description: 'Nome do arquivo com extensão', 
+                      example: 'apostila-cybersecurity.pdf' 
+                    },
+                    base64: { 
+                      type: 'string', 
+                      description: 'Conteúdo do arquivo codificado em Base64',
+                      example: 'JVBERi0xLjQKJdPr6eEKMSAwIG9iago8PC9U...'
+                    }
+                  }
+                } 
+              } 
+            } 
+          },
+          responses: { 
+            '201': { 
+              description: 'Material enviado e armazenado com sucesso',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      created: { type: 'boolean' },
+                      storage_key: { type: 'string' },
+                      tamanho: { type: 'integer' },
+                      tipo_arquivo: { type: 'string' }
+                    }
+                  }
+                }
+              }
+            }, 
+            '400': { description: 'Tipo de arquivo não suportado ou Base64 inválido' },
+            '404': { description: 'Módulo não encontrado' }
+          }
         }
       },
       '/courses/v1/{codigo}/inscrever': {
@@ -605,24 +768,6 @@ export function loadOpenApi(title='API Gateway'){
           ],
           responses: {
             '200': { description: 'Lista de cursos' }
-          }
-        }
-      },
-      '/courses/v1/dashboard/instrutor': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Dashboard instrutor',
-          responses: {
-            '200': { description: 'OK' }
-          }
-        }
-      },
-      '/courses/v1/dashboard/funcionario': {
-        get: {
-          tags: ['Courses'],
-          summary: 'Dashboard funcionário',
-          responses: {
-            '200': { description: 'OK' }
           }
         }
       },
