@@ -503,34 +503,68 @@ export function loadOpenApi(title='API Gateway'){
                   type: 'object',
                   properties: {
                     titulo: { type: 'string' },
-                    descricao: { type: 'string' },
+                    conteudo: { type: 'string' },
                     ordem: { type: 'integer' },
-                    xp: { type: 'integer' }
+                    obrigatorio: { type: 'boolean' },
+                    xp: { type: 'integer' },
+                    tipo_conteudo: { type: 'string' }
                   },
                   required: ['titulo']
                 }
               }
-            },
-            responses: {
-              '201': { description: 'Criado' },
-              '404': { description: 'Curso não encontrado' }
             }
+          },
+          responses: {
+            '201': { description: 'Módulo criado' },
+            '404': { description: 'Curso não encontrado' }
           }
         }
       },
-      '/courses/v1/modules/{moduleId}/materials': {
+      '/courses/v1/{codigo}/modulos/{moduloId}': {
+        patch: {
+          tags: ['Courses'],
+          summary: 'Atualizar módulo',
+          parameters: [
+            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } },
+            { name: 'moduloId', in: 'path', required: true, schema: { type: 'string' } }
+          ],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    titulo: { type: 'string' },
+                    conteudo: { type: 'string' },
+                    ordem: { type: 'integer' },
+                    obrigatorio: { type: 'boolean' },
+                    xp: { type: 'integer' },
+                    tipo_conteudo: { type: 'string' }
+                  }
+                }
+              }
+            }
+          },
+          responses: {
+            '200': { description: 'Módulo atualizado' },
+            '404': { description: 'Módulo não encontrado' }
+          }
+        }
+      },
+      '/courses/v1/modulos/{moduloId}/materiais': {
         get: {
           tags: ['Courses'],
           summary: 'Listar materiais do módulo',
-          parameters: [ { name: 'moduleId', in:'path', required:true, schema:{ type:'string' } } ],
+          parameters: [ { name: 'moduloId', in:'path', required:true, schema:{ type:'string' } } ],
           responses: { '200': { description: 'Lista de materiais' }, '404': { description: 'Módulo não encontrado' } }
         },
         post: {
           tags: ['Courses'],
           summary: 'Adicionar material',
-          parameters: [ { name: 'moduleId', in:'path', required:true, schema:{ type:'string' } } ],
-          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['nome_arquivo','tipo_arquivo','url_storage'], properties: { nome_arquivo:{type:'string'}, tipo_arquivo:{type:'string', enum:['pdf','video','presentation']}, url_storage:{type:'string'}, tamanho:{type:'integer'} } } } } },
-          responses: { '201': { description: 'Criado' }, '400': { description: 'Tipo inválido' } }
+          parameters: [ { name: 'moduloId', in:'path', required:true, schema:{ type:'string' } } ],
+          requestBody: { required:true, content: { 'application/json': { schema: { type:'object', required:['nome_arquivo','tipo_arquivo'], properties: { nome_arquivo:{type:'string'}, tipo_arquivo:{type:'string', enum:['pdf','video','presentation']}, url_storage:{type:'string'}, tamanho:{type:'integer'}, base64:{type:'string', description:'Conteúdo do arquivo em base64'} } } } } },
+          responses: { '201': { description: 'Material criado' }, '400': { description: 'Tipo inválido' } }
         }
       },
       '/courses/v1/{codigo}/inscrever': {
