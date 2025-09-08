@@ -826,7 +826,7 @@ export function loadOpenApi(title='API Gateway'){
         post: {
           tags: ['Progress'],
           summary: 'Criar inscrição',
-          description: 'Inscreve um usuário em um curso',
+          description: 'Inscreve um funcionário em um curso. O ID é gerado automaticamente.',
           security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
@@ -835,18 +835,35 @@ export function loadOpenApi(title='API Gateway'){
                 schema: {
                   type: 'object',
                   properties: {
-                    id: { type: 'string', format: 'uuid', description: 'ID único da inscrição' },
                     funcionario_id: { type: 'string', format: 'uuid', description: 'ID do funcionário' },
-                    curso_id: { type: 'string', description: 'ID do curso' }
+                    curso_id: { type: 'string', description: 'Código do curso' }
                   },
-                  required: ['id', 'funcionario_id', 'curso_id']
+                  required: ['funcionario_id', 'curso_id']
                 }
               }
             }
           },
           responses: {
-            '201': { description: 'Inscrição criada com sucesso' },
-            '401': { description: 'Não autorizado' }
+            '201': { 
+              description: 'Inscrição criada com sucesso',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      funcionario_id: { type: 'string', format: 'uuid' },
+                      curso_id: { type: 'string' },
+                      status: { type: 'string' },
+                      progresso_percentual: { type: 'integer' },
+                      data_inscricao: { type: 'string', format: 'date-time' }
+                    }
+                  }
+                }
+              }
+            },
+            '401': { description: 'Não autorizado' },
+            '409': { description: 'Funcionário já inscrito no curso' }
           }
         }
       },
@@ -966,6 +983,7 @@ export function loadOpenApi(title='API Gateway'){
       '/progress/v1/tracks/user/{userId}': {
         get: { tags: ['Progress'], summary: 'Progresso em trilhas do usuário (placeholder)', parameters: [ { name:'userId', in:'path', required:true, schema:{ type:'string' } } ], responses: { '200': { description: 'Dados retornados' } } }
       },
+
       // Gamification Service Routes - /gamification/v1
       '/gamification/v1/badges': {
         post: {
