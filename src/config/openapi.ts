@@ -730,34 +730,6 @@ export function loadOpenApi(title='API Gateway'){
           }
         }
       },
-      '/courses/v1/{codigo}/inscrever': {
-        post: {
-          tags: ['Courses'],
-          summary: 'Inscrever usuário',
-          parameters: [
-            { name: 'codigo', in: 'path', required: true, schema: { type: 'string' } }
-          ],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    userId: { type: 'string' }
-                  },
-                  required: ['userId']
-                }
-              }
-            },
-            responses: {
-              '201': { description: 'Inscrito' },
-              '409': { description: 'Já inscrito' },
-              '404': { description: 'Curso não encontrado' }
-            }
-          }
-        }
-      },
       '/courses/v1/catalogo': {
         get: {
           tags: ['Courses'],
