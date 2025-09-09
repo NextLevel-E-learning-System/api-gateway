@@ -133,11 +133,42 @@ export function loadOpenApi(title = 'API Gateway') {
         post: {
           tags: ['Authentication'],
           summary: 'Renovar token',
-          description: 'Renova o token de acesso usando o refresh token',
+          description: 'Renova o token de acesso usando o refresh token. Requer access token válido (mesmo que expirado) para segurança.',
           security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: false,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    refreshToken: { 
+                      type: 'string', 
+                      description: 'Refresh token (opcional se enviado via cookie HttpOnly)' 
+                    },
+                  },
+                },
+              },
+            },
+          },
           responses: {
-            '200': { description: 'Token renovado com sucesso' },
-            '401': { description: 'Refresh token inválido' },
+            '200': { 
+              description: 'Token renovado com sucesso',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      accessToken: { type: 'string' },
+                      tokenType: { type: 'string' },
+                      expiresInHours: { type: 'number' },
+                    },
+                  },
+                },
+              },
+            },
+            '401': { description: 'Access token ou refresh token inválido/expirado' },
+            '403': { description: 'Usuário inativo' },
           },
         },
       },
