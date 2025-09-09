@@ -2,12 +2,12 @@ name: docker-publish
 
 on:
   push:
-    branches: [ main ]
-    tags: [ 'v*.*.*' ]
+    branches: [main]
+    tags: ['v*.*.*']
   workflow_dispatch:
     inputs:
       extra-tag:
-        description: Tag extra opcional 
+        description: Tag extra opcional
         required: false
 
 concurrency:
