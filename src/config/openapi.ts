@@ -279,10 +279,34 @@ export function loadOpenApi(title = 'API Gateway') {
         get: {
           tags: ['Users'],
           summary: 'Meu perfil',
-          description: 'Retorna informações do próprio usuário logado',
+          description: 'Retorna informações completas do próprio usuário logado incluindo dados de gamificação',
           security: [{ bearerAuth: [] }],
           responses: {
-            '200': { description: 'Dados do usuário' },
+            '200': { 
+              description: 'Dados completos do usuário',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      nome: { type: 'string' },
+                      email: { type: 'string', format: 'email' },
+                      cpf: { type: 'string' },
+                      cargo: { type: 'string' },
+                      departamento_id: { type: 'string' },
+                      departamento_nome: { type: 'string' },
+                      status: { type: 'string', enum: ['ATIVO', 'INATIVO'] },
+                      tipo_usuario: { type: 'string', enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'] },
+                      data_criacao: { type: 'string', format: 'date-time' },
+                      xp_total: { type: 'integer', description: 'Total de XP acumulado' },
+                      nivel: { type: 'integer', description: 'Nível atual baseado no XP' },
+                      biografia: { type: 'string', nullable: true, description: 'Biografia (apenas para INSTRUTOR)' }
+                    }
+                  }
+                }
+              }
+            },
             '401': { description: 'Não autorizado' },
           },
         },
@@ -403,26 +427,61 @@ export function loadOpenApi(title = 'API Gateway') {
           tags: ['Users'],
           summary: 'Dashboard inteligente unificado',
           description:
-            '🎯 **Dashboard único e inteligente baseado no role do usuário:**\n\n👤 **FUNCIONARIO**: XP, nível, badges, cursos em andamento/concluídos/disponíveis, ranking departamental, timeline de atividades\n\n👨‍🏫 **INSTRUTOR**: Além do dashboard funcionário: cursos que ministra, estatísticas de conclusão, avaliações pendentes, métricas de performance dos alunos\n\n👑 **ADMIN**: Visão completa da plataforma: métricas gerais, cursos populares, engajamento por departamento, alertas do sistema, gestão de usuários e departamentos\n\n**Menu dinâmico**: Retorna `menu_operacoes` personalizado com opções específicas do role.',
+            '🎯 **Dashboard único e inteligente baseado no role do usuário:**\n\n👤 **FUNCIONARIO**: XP, nível, badges, cursos em andamento/concluídos/disponíveis, ranking departamental, timeline de atividades\n\n👨‍🏫 **INSTRUTOR**: Além do dashboard funcionário: cursos que ministra, estatísticas de conclusão, avaliações pendentes, métricas de performance dos alunos\n\n👑 **ADMIN**: Visão completa da plataforma: métricas gerais, cursos populares, engajamento por departamento, alertas do sistema, gestão de usuários e departamentos\n\n**Nota**: Menu de operações é gerenciado pelo frontend baseado no role do usuário.',
           security: [{ bearerAuth: [] }],
           responses: {
             '200': {
-              description: 'Dashboard personalizado com menu dinâmico baseado no role',
+              description: 'Dashboard personalizado baseado no role do usuário',
               content: {
                 'application/json': {
                   schema: {
                     type: 'object',
                     properties: {
-                      user_info: { type: 'object', description: 'Informações básicas do usuário' },
-                      menu_operacoes: {
-                        type: 'array',
-                        items: { type: 'object' },
-                        description: 'Menu personalizado baseado no role',
-                      },
-                      dashboard_data: {
+                      xp_atual: { type: 'integer', description: 'XP total do usuário (FUNCIONARIO/INSTRUTOR)' },
+                      nivel_atual: { type: 'integer', description: 'Nível atual baseado no XP (FUNCIONARIO/INSTRUTOR)' },
+                      xp_proximo_nivel: { type: 'integer', description: 'XP necessário para próximo nível (FUNCIONARIO/INSTRUTOR)' },
+                      proximo_badge: { type: 'string', description: 'Próximo badge disponível (FUNCIONARIO/INSTRUTOR)', nullable: true },
+                      progresso_nivel: { type: 'number', description: 'Progresso percentual para próximo nível (FUNCIONARIO/INSTRUTOR)' },
+                      ranking_departamento: {
                         type: 'object',
-                        description: 'Dados específicos do dashboard conforme o role',
+                        description: 'Ranking do departamento (FUNCIONARIO/INSTRUTOR)',
+                        properties: {
+                          posicao_atual: { type: 'integer', nullable: true },
+                          ranking: {
+                            type: 'array',
+                            items: {
+                              type: 'object',
+                              properties: {
+                                nome: { type: 'string' },
+                                xp_total: { type: 'integer' },
+                                posicao: { type: 'integer' }
+                              }
+                            }
+                          }
+                        }
                       },
+                      cursos_em_andamento: { type: 'array', items: { type: 'object' }, description: 'Cursos em progresso (FUNCIONARIO/INSTRUTOR)' },
+                      cursos_concluidos: { type: 'array', items: { type: 'object' }, description: 'Cursos concluídos (FUNCIONARIO/INSTRUTOR)' },
+                      cursos_disponiveis: { type: 'array', items: { type: 'object' }, description: 'Cursos disponíveis (FUNCIONARIO/INSTRUTOR)' },
+                      timeline: { 
+                        type: 'array', 
+                        items: { 
+                          type: 'object',
+                          properties: {
+                            tipo: { type: 'string' },
+                            descricao: { type: 'string' },
+                            data_evento: { type: 'string', format: 'date-time' }
+                          }
+                        }, 
+                        description: 'Timeline de atividades (FUNCIONARIO/INSTRUTOR)' 
+                      },
+                      cursos_ministrados: { type: 'array', items: { type: 'object' }, description: 'Cursos que o instrutor ministra (INSTRUTOR apenas)' },
+                      avaliacoes_pendentes: { type: 'integer', description: 'Avaliações pendentes de correção (INSTRUTOR apenas)' },
+                      estatisticas_cursos: { type: 'object', description: 'Estatísticas dos cursos ministrados (INSTRUTOR apenas)' },
+                      metricas_usuarios: { type: 'object', description: 'Métricas de usuários da plataforma (ADMIN apenas)' },
+                      cursos_populares: { type: 'array', items: { type: 'object' }, description: 'Cursos mais populares (ADMIN apenas)' },
+                      engajamento_departamentos: { type: 'array', items: { type: 'object' }, description: 'Engajamento por departamento (ADMIN apenas)' },
+                      alertas_sistema: { type: 'array', items: { type: 'object' }, description: 'Alertas e notificações do sistema (ADMIN apenas)' }
                     },
                   },
                 },
