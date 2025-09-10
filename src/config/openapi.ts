@@ -668,11 +668,15 @@ export function loadOpenApi(title = 'API Gateway') {
         get: {
           tags: ['Courses'],
           summary: 'Listar categorias',
+          description: 'Retorna a lista de categorias de cursos',
+          security: [{ bearerAuth: [] }],
           responses: { '200': { description: 'Lista de categorias' } },
         },
         post: {
           tags: ['Courses'],
           summary: 'Criar categoria',
+          description: 'Cria uma nova categoria de curso com cor personalizada',
+          security: [{ bearerAuth: [] }],
           requestBody: {
             required: true,
             content: {
@@ -681,16 +685,26 @@ export function loadOpenApi(title = 'API Gateway') {
                   type: 'object',
                   required: ['codigo', 'nome'],
                   properties: {
-                    codigo: { type: 'string' },
-                    nome: { type: 'string' },
-                    descricao: { type: 'string' },
-                    cor_hex: { type: 'string' },
+                    codigo: { type: 'string', description: 'Código único da categoria' },
+                    nome: { type: 'string', description: 'Nome da categoria' },
+                    descricao: { type: 'string', description: 'Descrição da categoria' },
+                    cor_hex: { 
+                      type: 'string', 
+                      pattern: '^#[0-9A-Fa-f]{6}$',
+                      description: 'Cor hexadecimal da categoria (formato: #RRGGBB)',
+                      example: '#3498db'
+                    },
                   },
                 },
               },
             },
           },
-          responses: { '201': { description: 'Criado' }, '409': { description: 'Duplicado' } },
+          responses: { 
+            '201': { description: 'Categoria criada com sucesso' }, 
+            '400': { description: 'Dados inválidos' },
+            '401': { description: 'Não autorizado' },
+            '409': { description: 'Categoria com código duplicado' } 
+          },
         },
       },
       '/courses/v1/{codigo}/modulos': {
@@ -832,13 +846,54 @@ export function loadOpenApi(title = 'API Gateway') {
       '/courses/v1/catalogo': {
         get: {
           tags: ['Courses'],
-          summary: 'Catálogo',
+          summary: 'Catálogo de cursos',
+          description: 'Retorna o catálogo de cursos',
           parameters: [
-            { name: 'categoria', in: 'query', schema: { type: 'string' } },
-            { name: 'instrutor', in: 'query', schema: { type: 'string' } },
+            { 
+              name: 'categoria', 
+              in: 'query', 
+              schema: { type: 'string' },
+              description: 'Filtrar por código da categoria'
+            },
+            { 
+              name: 'instrutor', 
+              in: 'query', 
+              schema: { type: 'string' },
+              description: 'Filtrar por nome do instrutor'
+            },
           ],
           responses: {
-            '200': { description: 'Lista de cursos' },
+            '200': { 
+              description: 'Lista de cursos do catálogo',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'array',
+                    items: {
+                      type: 'object',
+                      properties: {
+                        codigo: { type: 'string', description: 'Código único do curso' },
+                        titulo: { type: 'string', description: 'Título do curso' },
+                        descricao: { type: 'string', description: 'Descrição do curso' },
+                        categoria_id: { type: 'string', description: 'ID da categoria', nullable: true },
+                        instrutor_id: { type: 'string', description: 'ID do instrutor', nullable: true },
+                        duracao_estimada: { type: 'integer', description: 'Duração estimada em horas', nullable: true },
+                        xp_oferecido: { type: 'integer', description: 'XP oferecido ao completar', nullable: true },
+                        nivel_dificuldade: { 
+                          type: 'string', 
+                          enum: ['Básico', 'Intermediário', 'Avançado'],
+                          description: 'Nível de dificuldade',
+                          nullable: true
+                        },
+                        ativo: { type: 'boolean', description: 'Se o curso está ativo' },
+                        data_criacao: { type: 'string', format: 'date-time', description: 'Data de criação do curso' }
+                      },
+                      required: ['codigo', 'titulo', 'ativo', 'data_criacao']
+                    }
+                  }
+                }
+              }
+            },
           },
         },
       },
