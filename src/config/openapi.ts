@@ -493,7 +493,6 @@ export function loadOpenApi(title = 'API Gateway') {
                       },
                       cursos_em_andamento: { type: 'array', items: { type: 'object' }, description: 'Cursos em progresso (FUNCIONARIO/INSTRUTOR)' },
                       cursos_concluidos: { type: 'array', items: { type: 'object' }, description: 'Cursos concluídos (FUNCIONARIO/INSTRUTOR)' },
-                      cursos_disponiveis: { type: 'array', items: { type: 'object' }, description: 'Cursos disponíveis (FUNCIONARIO/INSTRUTOR)' },
                       timeline: { 
                         type: 'array', 
                         items: { 
