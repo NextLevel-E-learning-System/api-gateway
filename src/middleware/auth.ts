@@ -90,7 +90,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
   // (já tratado no early bypass)
 
   // Rota pública específica do user-service: somente GET /users/v1/departments
-  if (req.method === 'GET' && path === '/users/v1/departments') {
+  if (req.method === 'GET' && path === '/users/v1/departments' || path === '/users/v1/cargos') {
     return next()
   }
 
