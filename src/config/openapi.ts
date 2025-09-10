@@ -255,6 +255,99 @@ export function loadOpenApi(title = 'API Gateway') {
           },
         },
       },
+      '/users/v1/cargos': {
+        get: {
+          tags: ['Users'],
+          summary: 'Listar cargos',
+          description: 'Retorna a lista de cargos disponíveis com filtros opcionais',
+          parameters: [
+            {
+              name: 'search',
+              in: 'query',
+              schema: { type: 'string' },
+              description: 'Filtrar por nome (busca parcial)',
+            },
+            {
+              name: 'limit',
+              in: 'query',
+              schema: { type: 'integer', default: 50, minimum: 1, maximum: 200 },
+              description: 'Limite de resultados',
+            },
+            {
+              name: 'offset',
+              in: 'query',
+              schema: { type: 'integer', default: 0, minimum: 0 },
+              description: 'Offset para paginação',
+            },
+          ],
+          responses: {
+            '200': { 
+              description: 'Lista de cargos',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      items: {
+                        type: 'array',
+                        items: {
+                          type: 'object',
+                          properties: {
+                            id: { type: 'string', format: 'uuid', description: 'ID único do cargo' },
+                            nome: { type: 'string', description: 'Nome do cargo' },
+                          },
+                          required: ['id', 'nome']
+                        }
+                      },
+                      total: { type: 'integer', description: 'Total de registros' }
+                    }
+                  }
+                }
+              }
+            },
+          },
+        },
+        post: {
+          tags: ['Users'],
+          summary: 'Criar cargo (ADMIN)',
+          description: 'Cria um novo cargo. Requer role ADMIN.',
+          security: [{ bearerAuth: [] }],
+          requestBody: {
+            required: true,
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    nome: { type: 'string', minLength: 2, maxLength: 100, description: 'Nome do cargo' },
+                  },
+                  required: ['nome'],
+                },
+              },
+            },
+          },
+          responses: {
+            '201': { 
+              description: 'Cargo criado com sucesso',
+              content: {
+                'application/json': {
+                  schema: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'string', format: 'uuid' },
+                      nome: { type: 'string' },
+                    }
+                  }
+                }
+              }
+            },
+            '400': { description: 'Dados inválidos' },
+            '401': { description: 'Não autorizado' },
+            '403': { description: 'Acesso negado - apenas ADMIN' },
+            '409': { description: 'Cargo com nome duplicado' },
+          },
+        },
+      },
       '/users/v1': {
         get: {
           tags: ['Users'],
