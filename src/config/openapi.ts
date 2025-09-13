@@ -4,7 +4,7 @@ export function loadOpenApi(title = 'API Gateway') {
     info: {
       title,
       version: '1.0.0',
-      description: 'Gateway para todos os microserviços do NextLevel E-learning System',
+  description: 'Gateway para todos os microserviços do NextLevel E-learning System. Atualizado para novos roles (ADMIN, GERENTE, INSTRUTOR, ALUNO) e eventos.',
     },
     paths: {
       // Auth Service Routes - /auth/v1
@@ -51,8 +51,8 @@ export function loadOpenApi(title = 'API Gateway') {
       '/auth/v1/register': {
         post: {
           tags: ['Authentication'],
-          summary: 'Registrar usuário',
-          description: 'Registra um novo funcionário no sistema',
+          summary: 'Autocadastro (R01)',
+          description: 'Autocadastro de funcionário (perfil inicial ALUNO). Valida domínio corporativo, cria usuário ATIVO, XP=0, nível="Iniciante" e envia senha temporária (6 dígitos) por email. Publica evento user.created.',
           requestBody: {
             required: true,
             content: {
@@ -84,7 +84,10 @@ export function loadOpenApi(title = 'API Gateway') {
             },
           },
           responses: {
-            '201': { description: 'Usuário registrado com sucesso' },
+            '201': { 
+              description: 'Usuário registrado com sucesso',
+              content: { 'application/json': { schema: { type: 'object', properties: { id: { type: 'string', format: 'uuid' }, email: { type: 'string' }, role_inicial: { type: 'string', enum: ['ALUNO'] }, ativo: { type: 'boolean' }, evento_publicado: { type: 'boolean' } }, required: ['id','email','role_inicial','ativo'] } } }
+            },
             '400': { description: 'Dados inválidos' },
           },
         },
@@ -255,7 +258,7 @@ export function loadOpenApi(title = 'API Gateway') {
           },
         },
       },
-      '/users/v1/cargos': {
+  '/users/v1/cargos': {
         get: {
           tags: ['Users'],
           summary: 'Listar cargos',
@@ -293,7 +296,7 @@ export function loadOpenApi(title = 'API Gateway') {
                         items: {
                           type: 'object',
                           properties: {
-                            id: { type: 'string', format: 'uuid', description: 'ID único do cargo' },
+                            id: { type: 'string', description: 'Código do cargo (texto curto)' },
                             nome: { type: 'string', description: 'Nome do cargo' },
                           },
                           required: ['id', 'nome']
@@ -334,7 +337,7 @@ export function loadOpenApi(title = 'API Gateway') {
                   schema: {
                     type: 'object',
                     properties: {
-                      id: { type: 'string', format: 'uuid' },
+                      id: { type: 'string' },
                       nome: { type: 'string' },
                     }
                   }
@@ -348,11 +351,11 @@ export function loadOpenApi(title = 'API Gateway') {
           },
         },
       },
-      '/users/v1': {
+    '/users/v1': {
         get: {
           tags: ['Users'],
           summary: 'Listar usuários (ADMIN)',
-          description: 'Lista todos os usuários com filtros unificados. Requer role ADMIN.',
+      description: 'Lista paginada de usuários. Requer role ADMIN. Roles suportados: ADMIN, GERENTE, INSTRUTOR, ALUNO.',
           security: [{ bearerAuth: [] }],
           parameters: [
             {
@@ -367,12 +370,7 @@ export function loadOpenApi(title = 'API Gateway') {
               schema: { type: 'string' },
               description: 'Filtrar por departamento',
             },
-            {
-              name: 'tipo_usuario',
-              in: 'query',
-              schema: { type: 'string', enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'] },
-              description: 'Filtrar por tipo',
-            },
+            { name: 'tipo_usuario', in: 'query', schema: { type: 'string', enum: ['ALUNO','INSTRUTOR','GERENTE','ADMIN'] }, description: 'Filtrar por role' },
             {
               name: 'search',
               in: 'query',
@@ -421,7 +419,7 @@ export function loadOpenApi(title = 'API Gateway') {
                       departamento_id: { type: 'string' },
                       departamento_nome: { type: 'string' },
                       status: { type: 'string', enum: ['ATIVO', 'INATIVO'] },
-                      tipo_usuario: { type: 'string', enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'] },
+                      tipo_usuario: { type: 'string', enum: ['ALUNO','INSTRUTOR','GERENTE','ADMIN'] },
                       data_criacao: { type: 'string', format: 'date-time' },
                       xp_total: { type: 'integer', description: 'Total de XP acumulado' },
                       nivel: { type: 'integer', description: 'Nível atual baseado no XP' },
@@ -439,7 +437,7 @@ export function loadOpenApi(title = 'API Gateway') {
         get: {
           tags: ['Users'],
           summary: 'Obter usuário por ID',
-          description: 'Retorna informações de um usuário específico',
+          description: 'Retorna informações de um usuário específico. Inclui biografia se INSTRUTOR.',
           security: [{ bearerAuth: [] }],
           parameters: [
             {
@@ -450,13 +448,13 @@ export function loadOpenApi(title = 'API Gateway') {
             },
           ],
           responses: {
-            '200': { description: 'Dados do usuário' },
+            '200': { description: 'Dados do usuário (biografia quando INSTRUTOR)' },
             '404': { description: 'Usuário não encontrado' },
           },
         },
         patch: {
           tags: ['Users'],
-          summary: 'Atualizar usuário',
+          summary: 'Atualizar usuário / promover / trocar role',
           description:
             'Função unificada para todas as atualizações de usuário baseada em permissões:\n\n• **ADMIN**: Pode alterar todos os campos incluindo email, status, tipo_usuario, promover para INSTRUTOR\n• **INSTRUTOR**: Pode alterar apenas sua própria biografia\n• **FUNCIONARIO**: Não pode alterar dados (bloqueado)\n\nPara promover funcionário para INSTRUTOR, enviar `tipo_usuario: "INSTRUTOR"` com `biografia` e `cursos_id` opcionais.',
           security: [{ bearerAuth: [] }],
@@ -496,12 +494,7 @@ export function loadOpenApi(title = 'API Gateway') {
                       enum: ['ATIVO', 'INATIVO'],
                       description: 'Status (ADMIN apenas)',
                     },
-                    tipo_usuario: {
-                      type: 'string',
-                      enum: ['FUNCIONARIO', 'INSTRUTOR', 'ADMIN'],
-                      description:
-                        'Tipo de usuário (ADMIN apenas) - promove para INSTRUTOR automaticamente',
-                    },
+                    tipo_usuario: { type: 'string', enum: ['ALUNO','INSTRUTOR','GERENTE','ADMIN'], description: 'Alterar role. ADMIN pode tudo. Promover para INSTRUTOR cria registro de instrutor.' },
                     biografia: {
                       type: 'string',
                       description:
@@ -526,7 +519,7 @@ export function loadOpenApi(title = 'API Gateway') {
           },
         },
       },
-      '/users/v1/{id}/achievements': {
+  '/users/v1/{id}/achievements': {
         get: {
           tags: ['Users'],
           summary: 'Obter conquistas do usuário',
@@ -546,7 +539,7 @@ export function loadOpenApi(title = 'API Gateway') {
           },
         },
       },
-      '/users/v1/dashboard': {
+  '/users/v1/dashboard': {
         get: {
           tags: ['Users'],
           summary: 'Dashboard inteligente unificado',
@@ -1575,50 +1568,19 @@ export function loadOpenApi(title = 'API Gateway') {
           responses: { '200': { description: 'Histórico retornado' } },
         },
       },
-      // Notification Service Routes - /notifications/v1
-      '/notifications/v1': {
-        get: {
-          tags: ['Notifications'],
-          summary: 'Listar notificações',
-          description: 'Retorna as notificações do usuário',
-          security: [{ bearerAuth: [] }],
-          responses: {
-            '200': { description: 'Lista de notificações' },
-            '401': { description: 'Não autorizado' },
-          },
-        },
-        post: {
-          tags: ['Notifications'],
-          summary: 'Criar notificação',
-          description: 'Cria uma nova notificação',
-          security: [{ bearerAuth: [] }],
-          requestBody: {
-            required: true,
-            content: {
-              'application/json': {
-                schema: {
-                  type: 'object',
-                  properties: {
-                    usuario_id: {
-                      type: 'string',
-                      format: 'uuid',
-                      description: 'ID do usuário destinatário',
-                    },
-                    titulo: { type: 'string', description: 'Título da notificação' },
-                    mensagem: { type: 'string', description: 'Conteúdo da notificação' },
-                    tipo: { type: 'string', description: 'Tipo da notificação' },
-                    canal: { type: 'string', description: 'Canal de entrega (email, push, etc.)' },
-                  },
-                  required: ['usuario_id', 'titulo', 'mensagem'],
-                },
-              },
-            },
-          },
-          responses: {
-            '201': { description: 'Notificação criada com sucesso' },
-            '401': { description: 'Não autorizado' },
-          },
-        },
+      // Notification Service (rotas reais)
+      '/notifications/v1/{usuarioId}': {
+        get: { tags: ['Notifications'], summary: 'Listar notificações por usuário', description: 'Lista notificações de um usuário (ordenado por data_criacao desc).', security: [{ bearerAuth: [] }], parameters: [{ name: 'usuarioId', in: 'path', required: true, schema: { type: 'string', format: 'uuid' } }], responses: { '200': { description: 'Lista retornada' }, '401': { description: 'Não autorizado' } } }
+      },
+      '/notifications/v1/templates': {
+        get: { tags: ['Notifications'], summary: 'Listar templates', description: 'Retorna templates disponíveis.', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Lista retornada' } } },
+        post: { tags: ['Notifications'], summary: 'Criar template', description: 'Cria template (idempotente por código).', security: [{ bearerAuth: [] }], requestBody: { required: true, content: { 'application/json': { schema: { type: 'object', required: ['codigo','titulo','corpo'], properties: { codigo: { type: 'string' }, titulo: { type: 'string' }, corpo: { type: 'string' }, variaveis: { type: 'array', items: { type: 'string' } } } } } } }, responses: { '201': { description: 'Criado' } } }
+      },
+      '/notifications/v1/email-queue': {
+        get: { tags: ['Notifications'], summary: 'Fila de emails (últimos 50)', description: 'Consulta itens recentes da fila.', security: [{ bearerAuth: [] }], responses: { '200': { description: 'Lista retornada' } } }
+      },
+      '/notifications/v1/email-queue/{id}/retry': {
+        post: { tags: ['Notifications'], summary: 'Reprocessar email com erro', description: 'Marca item ERRO como PENDENTE e dispara processamento.', parameters: [{ name: 'id', in: 'path', required: true, schema: { type: 'integer' } }], security: [{ bearerAuth: [] }], responses: { '200': { description: 'Reprocessamento disparado' }, '404': { description: 'Item não encontrado' } } }
       },
     },
     components: {
@@ -1630,71 +1592,24 @@ export function loadOpenApi(title = 'API Gateway') {
         },
       },
       'x-events': {
-        'course.module.completed.v1': {
-          summary: 'Módulo concluído',
-          payload: {
-            type: 'object',
-            properties: {
-              enrollmentId: { type: 'string' },
-              courseId: { type: 'string' },
-              userId: { type: 'string' },
-              moduleId: { type: 'string' },
-              progressPercent: { type: 'number' },
-              completedCourse: { type: 'boolean' },
-            },
-          },
-        },
-        'course.completed.v1': {
-          summary: 'Curso concluído',
-          payload: {
-            type: 'object',
-            properties: {
-              enrollmentId: { type: 'string' },
-              courseId: { type: 'string' },
-              userId: { type: 'string' },
-              totalProgress: { type: 'number' },
-            },
-          },
-        },
-        'xp.adjusted.v1': {
-          summary: 'XP ajustado',
-          payload: {
-            type: 'object',
-            properties: {
-              userId: { type: 'string' },
-              delta: { type: 'number' },
-              newTotalXp: { type: 'number' },
-              level: { type: 'string' },
-              sourceEventId: { type: 'string' },
-            },
-          },
-        },
-        'assessment.passed.v1': {
-          summary: 'Avaliação aprovada',
-          payload: {
-            type: 'object',
-            properties: {
-              assessmentCode: { type: 'string' },
-              courseId: { type: 'string' },
-              userId: { type: 'string' },
-              score: { type: 'number' },
-              passed: { type: 'boolean' },
-            },
-          },
-        },
-        'assessment.failed.v1': {
-          summary: 'Avaliação reprovada',
-          payload: {
-            type: 'object',
-            properties: {
-              assessmentCode: { type: 'string' },
-              courseId: { type: 'string' },
-              userId: { type: 'string' },
-              score: { type: 'number' },
-              passed: { type: 'boolean' },
-            },
-          },
-        },
+        'user.created': { summary: 'Novo usuário criado', consumers: ['auth-service','gamification-service','notification-service'] },
+        'user.updated': { summary: 'Usuário atualizado', consumers: ['auth-service','gamification-service'] },
+        'user.deactivated': { summary: 'Usuário inativado', consumers: ['auth-service','course-service','progress-service'] },
+        'user.role_changed': { summary: 'Role alterada', consumers: ['course-service','progress-service','gamification-service'] },
+        'user.password_reset': { summary: 'Reset de senha', consumers: ['auth-service','notification-service'] },
+        'course.created': { summary: 'Curso criado', consumers: ['progress-service','notification-service'] },
+        'course.updated': { summary: 'Curso atualizado', consumers: ['progress-service','gamification-service'] },
+        'course.deactivated': { summary: 'Curso desativado', consumers: ['progress-service','notification-service'] },
+        'module.updated': { summary: 'Módulo atualizado', consumers: ['progress-service'] },
+        'assessment.created': { summary: 'Avaliação criada', consumers: ['progress-service'] },
+        'assessment.completed': { summary: 'Avaliação concluída', consumers: ['gamification-service','progress-service'] },
+        'assessment.corrected': { summary: 'Avaliação corrigida', consumers: ['progress-service'] },
+        'xp.earned': { summary: 'XP ganho', consumers: ['progress-service'] },
+        'badge.earned': { summary: 'Badge conquistado', consumers: ['notification-service'] },
+        'ranking.updated': { summary: 'Ranking atualizado', consumers: ['notification-service'] },
+        'progress.updated': { summary: 'Progresso atualizado', consumers: ['gamification-service'] },
+        'certificate.issued': { summary: 'Certificado emitido', consumers: ['notification-service'] },
+        'notification.send': { summary: 'Solicitação de envio de notificação', consumers: ['notification-service'] }
       },
     },
     security: [{ bearerAuth: [] }],
