@@ -1,111 +1,51 @@
 import { Request, Response, NextFunction } from 'express'
-// jsonwebtoken é CommonJS; usar default import e acessar verify via objeto para evitar erros em ESM.
 import jwt from 'jsonwebtoken'
 import { createHash } from 'crypto'
 
-// Rotas públicas explícitas (prefixos exatos) e padrões (regex) que não exigem Authorization
-const publicStarts = [
+// Rotas públicas do sistema
+const PUBLIC_ROUTES = [
+  // Auth service
   '/auth/v1/login',
-  '/auth/v1/register',
   '/auth/v1/reset-password',
-  '/openapi.json', // spec agregada do gateway
+  // User service
+  '/users/v1/departamentos',
+  '/users/v1/cargos',
+  '/users/v1/funcionarios/register',
+  '/users/v1/funcionarios/reset-password',
+  // Gateway
+  '/openapi.json',
+  '/'
 ]
-const publicPatterns = [
-  /^\/$/, // raiz
-  /^\/favicon\.ico$/, // favicon raiz
-  /\/docs($|\/)/, // qualquer coisa contendo /docs (inclusive /docs/services)
-  /swagger-ui/, // assets swagger
-  /favicon-.*\.png$/, // favicons swagger
+
+// Padrões de rotas que sempre são públicas
+const PUBLIC_PATTERNS = [
+  /^\/favicon\.ico$/,
+  /\/docs($|\/)/,
+  /swagger-ui/,
+  /favicon-.*\.png$/
 ]
 
-// Função especial para validar refresh: permite tokens expirados mas exige presença
-function handleRefreshAuth(req: Request, res: Response, next: NextFunction) {
-  let auth = req.header('authorization')
-  
-  // Fallback: cookie accessToken
-  if (!auth && req.headers.cookie) {
-    try {
-      const cookies = Object.fromEntries(
-        req.headers.cookie.split(';').map(c => {
-          const [k, ...v] = c.trim().split('=')
-          return [k, decodeURIComponent(v.join('='))]
-        })
-      )
-      if (cookies.accessToken) {
-        auth = `Bearer ${cookies.accessToken}`
-      }
-    } catch (_e) {
-      /* ignore parse errors */
-    }
-  }
+interface JwtPayload {
+  sub: string
+  roles?: string[]
+  [key: string]: unknown
+}
 
-  if (!auth) {
-    return res.status(401).json({ error: 'authorization_required_for_refresh' })
-  }
-
-  const token = auth.replace(/^Bearer\s+/i, '')
-  
-  try {
-    const secret = process.env.JWT_SECRET || 'dev-secret'
-    const key = createHash('sha256').update(secret).digest()
-    const anyJwt: any = jwt as any
-    const verifyFn = anyJwt.verify || (anyJwt.default && anyJwt.default.verify)
-    
-    // Tentar validar token normalmente
-    const payload = verifyFn(token, key) as any
-    res.setHeader('x-user-id', payload.sub)
-    res.setHeader('x-user-roles', (payload.roles || []).join(','))
-    ;(req as any).user = payload
-    return next()
-    
-  } catch (e: any) {
-    // Se token expirou, ainda assim extrair dados para validação no service
-    if (e?.name === 'TokenExpiredError') {
-      try {
-        const decoded: any = jwt.decode(token)
-        if (decoded && decoded.sub) {
-          res.setHeader('x-user-id', decoded.sub)
-          res.setHeader('x-user-roles', (decoded.roles || []).join(','))
-          ;(req as any).user = decoded
-          return next()
-        }
-      } catch (decodeError) {
-        return res.status(401).json({ error: 'invalid_token_format' })
-      }
-    }
-    
-    return res.status(401).json({ error: 'invalid_token' })
+interface RequestWithUser extends Request {
+  user?: JwtPayload
+  log?: {
+    debug: (data: object, message: string) => void
+    warn: (data: object, message: string) => void
   }
 }
 
-export function authMiddleware(req: Request, res: Response, next: NextFunction) {
-  const path = req.originalUrl.split('?')[0]
+function extractToken(req: Request): string | null {
+  // 1. Header Authorization
+  const auth = req.header('authorization')
+  if (auth) return auth.replace(/^Bearer\s+/i, '')
 
-  // Logout agora exige Authorization (sem bypass)
-
-  // Bypass para docs e assets swagger de qualquer serviço
-  const isSwaggerAsset = /(swagger-ui|favicon-\d+x\d+\.png|swagger-ui\.css)/.test(path)
-  const isDocs = /\/docs(\/|$)/.test(path)
-  if (isSwaggerAsset || isDocs) return next()
-
-  // (já tratado no early bypass)
-
-  // Rotas públicas específicas do user-service: departamentos e cargos
-  if (req.method === 'GET' && (path === '/users/v1/departmentos' || path === '/users/v1/cargos')) {
-    return next()
-  }
-
-  // Tratamento especial para refresh: exige token mas permite expirado
-  if (req.method === 'POST' && path === '/auth/v1/refresh') {
-    return handleRefreshAuth(req, res, next)
-  }
-
-  if (publicStarts.some(p => path.startsWith(p)) || publicPatterns.some(r => r.test(path))) {
-    return next()
-  }
-  let auth = req.header('authorization')
-  // Fallback: cookie accessToken
-  if (!auth && req.headers.cookie) {
+  // 2. Cookie accessToken
+  if (req.headers.cookie) {
     try {
       const cookies = Object.fromEntries(
         req.headers.cookie.split(';').map(c => {
@@ -113,49 +53,102 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction) 
           return [k, decodeURIComponent(v.join('='))]
         })
       )
-      if (cookies.accessToken) {
-        auth = `Bearer ${cookies.accessToken}`
-      }
-    } catch (_e) {
-      /* ignore parse errors */
+      if (cookies.accessToken) return cookies.accessToken
+    } catch {
+      // ignore parse errors
     }
   }
-  // Fallback: query param ?access_token=
-  if (!auth && (req as any).query?.access_token) {
-    auth = `Bearer ${(req as any).query.access_token}`
+
+  // 3. Query param
+  const query = req.query as Record<string, string>
+  if (query.access_token) return query.access_token
+
+  return null
+}
+
+function verifyToken(token: string): JwtPayload {
+  const secret = process.env.JWT_SECRET || 'dev-secret'
+  const key = createHash('sha256').update(secret).digest()
+  return jwt.verify(token, key) as JwtPayload
+}
+
+function isPublicRoute(path: string): boolean {
+  return PUBLIC_ROUTES.some(route => path.startsWith(route)) ||
+         PUBLIC_PATTERNS.some(pattern => pattern.test(path))
+}
+
+function handleRefreshRoute(req: RequestWithUser, res: Response, next: NextFunction): void {
+  const token = extractToken(req)
+  
+  if (!token) {
+    res.status(401).json({ error: 'authorization_required_for_refresh' })
+    return
   }
-  ;(req as any).log?.debug(
-    {
-      path,
-      hasAuthHeader: !!req.header('authorization'),
-      usedCookie: !!req.headers.cookie,
-      authSnippet: auth?.substring(0, 25),
-    },
-    'auth_header_received'
-  )
-  if (!auth) {
-    ;(req as any).log?.warn({ path, msg: 'auth_missing_header' }, 'Missing Authorization header')
-    return res.status(401).json({ error: 'missing_authorization_header' })
-  }
-  const token = auth.replace(/^Bearer\s+/i, '')
+
   try {
-    const secret = process.env.JWT_SECRET || 'dev-secret'
-    const key = createHash('sha256').update(secret).digest()
-    const anyJwt: any = jwt as any
-    const verifyFn = anyJwt.verify || (anyJwt.default && anyJwt.default.verify)
-    if (typeof verifyFn !== 'function') {
-      throw new TypeError('jsonwebtoken_verify_not_function')
-    }
-    const payload = verifyFn(token, key) as any
+    // Tentar validar token normalmente
+    const payload = verifyToken(token)
     res.setHeader('x-user-id', payload.sub)
     res.setHeader('x-user-roles', (payload.roles || []).join(','))
-    ;(req as any).user = payload
-    return next()
-  } catch (e: any) {
-    ;(req as any).log?.warn(
-      { path, msg: 'auth_invalid_token', errName: e?.name, errMessage: e?.message },
+    req.user = payload
+    next()
+  } catch (e) {
+    const error = e as Error
+    // Se token expirou, ainda extrair dados para validação no service
+    if (error.name === 'TokenExpiredError') {
+      try {
+        const decoded = jwt.decode(token) as JwtPayload
+        if (decoded?.sub) {
+          res.setHeader('x-user-id', decoded.sub)
+          res.setHeader('x-user-roles', (decoded.roles || []).join(','))
+          req.user = decoded
+          next()
+          return
+        }
+      } catch {
+        // ignore decode errors
+      }
+    }
+    res.status(401).json({ error: 'invalid_token' })
+  }
+}
+
+export function authMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const userReq = req as RequestWithUser
+  const path = req.originalUrl.split('?')[0]
+
+  // Bypass para documentação e assets do Swagger
+  if (isPublicRoute(path)) {
+    next()
+    return
+  }
+
+  // Tratamento especial para refresh: permite token expirado
+  if (req.method === 'POST' && path === '/auth/v1/refresh') {
+    handleRefreshRoute(userReq, res, next)
+    return
+  }
+
+  const token = extractToken(req)
+  
+  if (!token) {
+    userReq.log?.warn({ path, msg: 'auth_missing_header' }, 'Missing Authorization header')
+    res.status(401).json({ error: 'missing_authorization_header' })
+    return
+  }
+
+  try {
+    const payload = verifyToken(token)
+    res.setHeader('x-user-id', payload.sub)
+    res.setHeader('x-user-roles', (payload.roles || []).join(','))
+    userReq.user = payload
+    next()
+  } catch (e) {
+    const error = e as Error
+    userReq.log?.warn(
+      { path, msg: 'auth_invalid_token', errName: error.name, errMessage: error.message },
       'Invalid token'
     )
-    return res.status(401).json({ error: 'invalid_token' })
+    res.status(401).json({ error: 'invalid_token' })
   }
 }
