@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import swaggerUi from 'swagger-ui-express'
 import { logger } from './config/logger.js'
 import { correlationId } from './middleware/correlationId.js'
 import { authMiddleware } from './middleware/auth.js'
@@ -28,8 +29,16 @@ export function createServer() {
   app.use(correlationId)
   app.use(authMiddleware)
 
+  // Documentação OpenAPI agregada via Swagger UI
+  app.use('/docs', swaggerUi.serve)
+  app.get('/docs', swaggerUi.setup(null, {
+    swaggerOptions: {
+      url: '/openapi.json'
+    }
+  }))
+
   // Única rota de OpenAPI agregada
-  app.get('/docs/swagger', async (_req, res) => {
+  app.get('/openapi.json', async (_req, res) => {
     const services = (process.env.SERVICES_OPENAPI || '').split(',').map(s => s.trim()).filter(Boolean)
     const base: OpenApiSpec & { openapi: string } = { openapi: '3.0.3', info: { title: 'Aggregated API', version: '1.0.0' }, paths: {}, components: { schemas: {} } }
     for (const url of services) {
@@ -48,7 +57,7 @@ export function createServer() {
         }
       } catch { /* ignora erros individuais */ }
     }
-  res.json(base)
+    res.json(base)
   })
   app.use(proxyRoutes)
   app.use(errorHandler)
