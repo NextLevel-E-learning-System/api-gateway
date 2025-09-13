@@ -8,6 +8,7 @@ const publicStarts = [
   '/auth/v1/login',
   '/auth/v1/register',
   '/auth/v1/reset-password',
+  '/openapi.json', // spec agregada do gateway
 ]
 const publicPatterns = [
   /^\/$/, // raiz
