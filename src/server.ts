@@ -3,7 +3,7 @@ import cors from 'cors'
 import swaggerUi from 'swagger-ui-express'
 import { logger } from './config/logger.js'
 import { correlationId } from './middleware/correlationId.js'
-import { authMiddleware } from './middleware/auth.js'
+import { authAndAuthorizationMiddleware } from './middleware/authAndAuthorization.js'
 import { proxyRoutes } from './routes/proxyRoutes.js'
 import { errorHandler } from './middleware/errorHandler.js'
 
@@ -35,7 +35,7 @@ export function createServer() {
     next()
   })
   app.use(correlationId)
-  app.use(authMiddleware)
+  app.use(authAndAuthorizationMiddleware) // ✅ UM ÚNICO MIDDLEWARE PARA TUDO!
 
   // Documentação Swagger UI
   app.use('/docs', swaggerUi.serve)
