@@ -1,16 +1,12 @@
 FROM node:22-alpine3.20 AS build
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY tsconfig.json ./
-COPY src ./src
-RUN npm run build
+WORKDIR /usr/src/app
 
-FROM node:22-alpine3.20
-WORKDIR /app
-ENV NODE_ENV=production
-COPY --from=build /app/package*.json ./
+COPY package*.json ./
+
+# Instalar as dependências
 RUN npm install --omit=dev
-COPY --from=build /app/dist ./dist
+
+COPY ./ ./
+
 EXPOSE 3333
 CMD ["node", "dist/index.js"]
