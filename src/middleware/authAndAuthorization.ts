@@ -21,8 +21,10 @@ const AUTH_CONFIG = {
   // ÚNICAS rotas REALMENTE públicas (sem header Authorization)
   publicRoutes: [
     'POST /auth/v1/login',                       // Login
+    'POST /auth/v1/register',                    // Registro (auth-service)
     'POST /users/v1/register',     // Registro
-    'POST /users/v1/reset-password', // Reset de senha
+    'POST /users/v1/reset-password', 
+    'POST /auth/v1/reset-password',
     'GET /users/v1/departamentos',              // Lista departamentos
     'GET /users/v1/cargos',                     // Lista cargos
   ],
