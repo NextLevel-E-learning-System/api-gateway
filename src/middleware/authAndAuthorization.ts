@@ -20,24 +20,25 @@ interface RequestWithUser extends Request {
 const AUTH_CONFIG = {
   // ÚNICAS rotas REALMENTE públicas (sem header Authorization)
   publicRoutes: [
+    'POST /auth/v1/login',                       // Login
     'POST /users/v1/funcionarios/register',     // Registro
     'POST /users/v1/funcionarios/reset-password', // Reset de senha
     'GET /users/v1/departamentos',              // Lista departamentos
-    'GET /users/v1/cargos'                      // Lista cargos
+    'GET /users/v1/cargos',                     // Lista cargos
   ],
   
   // Padrões que requerem ADMIN para CRUD
   adminRequired: {
     patterns: [
       '/users/v1/funcionarios/*/role',    // Gerenciar roles de usuários
-      '/courses/v1/categorias',           // Gerenciar categorias (exceto GET)
+      '/courses/v1/categorias',           // Gerenciar categorias
       '/courses/v1/*/active',             // Ativar/desativar cursos
-      '/gamification/v1/badges',          // Gerenciar badges (exceto GET)
+      '/gamification/v1/badges',          // Gerenciar badges
       '/notifications/v1/templates',      // Gerenciar templates
       '/notifications/v1/filas',          // Gerenciar filas
       '/notifications/v1/notificacoes'    // Enviar notificações manuais
     ],
-    methods: ['POST', 'PUT', 'PATCH', 'DELETE']
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   },
   
   // Padrões que requerem INSTRUTOR ou ADMIN para CRUD
