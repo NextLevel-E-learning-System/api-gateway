@@ -30,7 +30,7 @@ const AUTH_CONFIG = {
   adminRequired: {
     patterns: [
       '/users/v1/funcionarios/*/role',    // Gerenciar roles de usuários
-      '/courses/v1/categories',           // Gerenciar categorias (exceto GET)
+      '/courses/v1/categorias',           // Gerenciar categorias (exceto GET)
       '/courses/v1/*/active',             // Ativar/desativar cursos
       '/gamification/v1/badges',          // Gerenciar badges (exceto GET)
       '/notifications/v1/templates',      // Gerenciar templates
@@ -60,6 +60,7 @@ const AUTH_CONFIG = {
 // Padrões para assets e documentação
 const ASSET_PATTERNS = [
   /^\/favicon\.ico$/,
+  /^\/openapi\.json$/,  // ✅ OpenAPI spec público
   /\/docs($|\/)/,
   /swagger-ui/,
   /favicon-.*\.png$/
