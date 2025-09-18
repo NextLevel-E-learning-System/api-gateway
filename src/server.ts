@@ -10,7 +10,10 @@ import { errorHandler } from './middleware/errorHandler.js'
 interface OpenApiSpec { 
   info?: { title?: string; version?: string }
   paths?: Record<string, unknown>
-  components?: { schemas?: Record<string, unknown> } 
+  components?: { 
+    schemas?: Record<string, unknown>
+    securitySchemes?: Record<string, unknown>
+  } 
 }
 
 export function createServer() {
@@ -53,7 +56,16 @@ export function createServer() {
       openapi: '3.0.3',
       info: { title: 'NextLevel E-learning API', version: '1.0.0' },
       paths: {},
-      components: { schemas: {} }
+      components: { 
+        schemas: {},
+        securitySchemes: {
+          bearerAuth: {
+            type: 'http',
+            scheme: 'bearer',
+            bearerFormat: 'JWT'
+          }
+        }
+      }
     }
     
     // Buscar e agregar specs de todos os serviços
@@ -77,6 +89,15 @@ export function createServer() {
           for (const [name, schema] of Object.entries(serviceSpec.components.schemas)) {
             if (!aggregated.components!.schemas![name]) {
               aggregated.components!.schemas![name] = schema
+            }
+          }
+        }
+        
+        // Mesclar securitySchemes
+        if (serviceSpec.components?.securitySchemes) {
+          for (const [name, scheme] of Object.entries(serviceSpec.components.securitySchemes)) {
+            if (!aggregated.components!.securitySchemes![name]) {
+              aggregated.components!.securitySchemes![name] = scheme
             }
           }
         }
