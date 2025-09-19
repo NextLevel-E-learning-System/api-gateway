@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 
 interface RequestWithUser extends Request {
-  user?: { sub: string; roles?: string[] }
+  user?: { sub: string; role?: string }
   log?: {
     debug: (data: object, message: string) => void
     error: (data: object, message: string) => void
@@ -59,7 +59,13 @@ export function proxyRouter(envVar: string, servicePrefix: string) {
       
       if (userReq.user) {
         headers['x-user-id'] = userReq.user.sub
-        headers['x-user-roles'] = (userReq.user.roles || []).join(',')
+        const userRole = userReq.user.role || 'ALUNO'
+        headers['x-user-role'] = userRole
+        // Adicionar dados do usuário como JSON no header
+        headers['x-user-data'] = Buffer.from(JSON.stringify({
+          sub: userReq.user.sub,
+          role: userRole
+        })).toString('base64')
       }
       
       // Content-Type apenas quando há body
@@ -70,11 +76,17 @@ export function proxyRouter(envVar: string, servicePrefix: string) {
         headers['content-type'] = 'application/json'
       }
 
+      // CRUCIAL: Preparar o body com dados do usuário injetados
+      let requestBody
+      if (hasBody) {
+        requestBody = JSON.stringify(req.body)
+      }
+
       // Fazer requisição para o serviço upstream
       const upstreamResponse = await fetch(upstreamUrl, {
         method: req.method,
         headers,
-        body: hasBody ? JSON.stringify(req.body) : undefined,
+        body: requestBody,
       })
 
       const responseText = await upstreamResponse.text()
