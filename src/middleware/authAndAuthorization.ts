@@ -4,7 +4,7 @@ import { createHash } from 'crypto'
 
 interface JwtPayload {
   sub: string
-  role?: string  // ✅ SINGULAR! Cada usuário tem 1 role
+  roles?: string  // ✅ SINGULAR! Cada usuário tem 1 role
   [key: string]: unknown
 }
 
@@ -188,7 +188,6 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
     }
     
     res.setHeader('x-user-id', payload.sub)
-    res.setHeader('x-user-role', payload.role || 'ALUNO')  // ✅ SINGULAR!
     userReq.user = payload
   } catch (e) {
     const error = e as Error
@@ -201,7 +200,7 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
   }
   
   // 3. AUTORIZAÇÃO - Verificar permissões para CRUD
-  const userRole = payload.role || 'ALUNO'  // ✅ SIMPLES!
+  const userRole = payload.roles
   
   // Requer ADMIN para estas operações?
   if (requiresAdmin(path, method)) {

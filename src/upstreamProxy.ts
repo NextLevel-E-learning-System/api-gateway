@@ -1,7 +1,7 @@
 import { Router, Request, Response } from 'express'
 
 interface RequestWithUser extends Request {
-  user?: { sub: string; role?: string }
+  user?: { sub: string; roles?: string }
   log?: {
     debug: (data: object, message: string) => void
     error: (data: object, message: string) => void
@@ -58,13 +58,10 @@ export function proxyRouter(envVar: string, servicePrefix: string) {
       }
       
       if (userReq.user) {
-        headers['x-user-id'] = userReq.user.sub
-        const userRole = userReq.user.role || 'ALUNO'
-        headers['x-user-role'] = userRole
-        // Adicionar dados do usuário como JSON no header
+        const userRole = userReq.user.roles
         headers['x-user-data'] = Buffer.from(JSON.stringify({
           sub: userReq.user.sub,
-          role: userRole
+          roles: userRole
         })).toString('base64')
       }
       
