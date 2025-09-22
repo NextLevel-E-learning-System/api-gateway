@@ -5,6 +5,9 @@ import { createHash } from 'crypto'
 interface JwtPayload {
   sub: string
   roles?: string  // ✅ SINGULAR! Cada usuário tem 1 role
+  departamento_codigo?: string  // ✅ Departamento do usuário
+  cargo_id?: string             // ✅ Cargo do usuário
+  funcionario_id?: string       // ✅ ID do funcionário (para instrutores)
   [key: string]: unknown
 }
 
@@ -43,6 +46,17 @@ const AUTH_CONFIG = {
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
   },
   
+  // Padrões que requerem ADMIN para CRUD
+  gerenteRequired: {
+    patterns: [
+      '/users/v1/funcionarios/departamento',
+      '/courses/v1/categorias',           // Gerenciar categorias
+      '/users/v1/funcionarios/*/role',    // Gerenciar roles de usuários
+      '/reports/departamento',        // Relatórios departamentais
+    ],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+  },
+
   // Padrões que requerem INSTRUTOR ou ADMIN para CRUD
   instructorRequired: {
     patterns: [
@@ -137,9 +151,11 @@ function requiresInstructor(path: string, method: string): boolean {
 }
 
 function requiresGerente(path: string, method: string): boolean {
-  // GERENTE pode fazer algumas operações que INSTRUTOR faz
-  // Por exemplo: visualizar relatórios departamentais
-  return path.includes('/reports/departamento') && method === 'GET'
+  // GERENTE pode fazer algumas operações específicas
+  const { patterns, methods } = AUTH_CONFIG.gerenteRequired
+   return patterns.some(pattern => 
+    matchesRoute(pattern, path) && methods.includes(method)
+  )
 }
 
 // MIDDLEWARE UNIFICADO SIMPLES - AUTENTICAÇÃO + AUTORIZAÇÃO
@@ -188,6 +204,8 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
     }
     
     res.setHeader('x-user-id', payload.sub)
+    res.setHeader('x-user-role', payload.roles || 'ALUNO')
+    
     userReq.user = payload
   } catch (e) {
     const error = e as Error
