@@ -43,7 +43,7 @@ const AUTH_CONFIG = {
       '/notifications/v1/filas',          // Gerenciar filas
       '/notifications/v1/notificacoes'    // Enviar notificações manuais
     ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    methods: [ 'POST', 'PUT', 'PATCH', 'DELETE']
   },
   
   // Padrões que requerem ADMIN para CRUD
@@ -54,7 +54,7 @@ const AUTH_CONFIG = {
       '/users/v1/funcionarios/*/role',    // Gerenciar roles de usuários
       '/reports/departamento',        // Relatórios departamentais
     ],
-    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE']
+    methods: [  'POST', 'PUT', 'PATCH', 'DELETE']
   },
 
   // Padrões que requerem INSTRUTOR ou ADMIN para CRUD
