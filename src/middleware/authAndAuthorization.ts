@@ -5,9 +5,6 @@ import { createHash } from 'crypto'
 interface JwtPayload {
   sub: string
   roles?: string  // ✅ SINGULAR! Cada usuário tem 1 role
-  departamento_codigo?: string  // ✅ Departamento do usuário
-  cargo_id?: string             // ✅ Cargo do usuário
-  funcionario_id?: string       // ✅ ID do funcionário (para instrutores)
   [key: string]: unknown
 }
 
