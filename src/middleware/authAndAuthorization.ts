@@ -34,7 +34,6 @@ const AUTH_CONFIG = {
     patterns: [
       '/users/v1/funcionarios/*/role',    // Gerenciar roles de usuários
       '/courses/v1/categorias',           // Gerenciar categorias
-      '/courses/v1/*/active',             // Ativar/desativar cursos
       '/gamification/v1/badges',          // Gerenciar badges
       '/notifications/v1/templates',      // Gerenciar templates
       '/notifications/v1/filas',          // Gerenciar filas
@@ -59,6 +58,7 @@ const AUTH_CONFIG = {
     patterns: [
       '/courses/v1',                      // Criar/editar cursos
       '/courses/v1/*/duplicar',           // Duplicar cursos
+      '/courses/v1/*/active',             // Ativar/desativar cursos (INSTRUTOR pode desde que não tenha inscrições - validação no backend)
       '/courses/v1/*/modulos',            // Gerenciar módulos
       '/courses/v1/modulos/*/materiais',  // Gerenciar materiais
       '/assessments/v1',                  // Criar/editar avaliações
