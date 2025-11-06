@@ -201,7 +201,7 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
     }
     
     res.setHeader('x-user-id', payload.sub)
-    res.setHeader('x-user-role', payload.roles || 'ALUNO')
+    res.setHeader('x-user-role', payload.roles || 'FUNCIONARIO')
     
     userReq.user = payload
   } catch (e) {
