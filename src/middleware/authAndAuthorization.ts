@@ -18,16 +18,19 @@ interface RequestWithUser extends Request {
 
 // CONFIGURAÇÃO CORRETA DE AUTENTICAÇÃO E AUTORIZAÇÃO
 const AUTH_CONFIG = {
-  // ÚNICAS rotas REALMENTE públicas (sem header Authorization)
-  publicRoutes: [
-    'POST /auth/v1/login',                       // Login
-    'POST /auth/v1/register',                    // Registro (auth-service)
-    'POST /users/v1/register',     // Registro
-    'POST /users/v1/reset-password', 
-    'POST /auth/v1/reset-password',
-    'GET /users/v1/departamentos',              // Lista departamentos
-    'GET /users/v1/cargos',                     // Lista cargos
+
+  publicRoutes: {
+  patterns: [
+    '/auth/v1/login',
+    '/auth/v1/register',
+    '/users/v1/register',
+    '/users/v1/reset-password',
+    '/auth/v1/reset-password',
+    '/users/v1/departamentos',
+    '/users/v1/cargos',
   ],
+      methods: ['POST', 'PUT', 'PATCH', 'DELETE']
+},
   
   // Padrões que requerem ADMIN para CRUD
   adminRequired: {
@@ -123,14 +126,14 @@ function matchesRoute(pattern: string, actual: string): boolean {
 }
 
 function isPublicRoute(path: string, method: string): boolean {
-  // Verificar assets primeiro (favicon, docs, etc.)
-  if (ASSET_PATTERNS.some(pattern => pattern.test(path))) {
+   if (ASSET_PATTERNS.some(pattern => pattern.test(path))) {
     return true
   }
   
-  // Verificar as ÚNICAS 3 rotas realmente públicas
-  const routeKey = `${method} ${path}`
-  return AUTH_CONFIG.publicRoutes.includes(routeKey)
+  const { patterns, methods } = AUTH_CONFIG.publicRoutes
+  return patterns.some(pattern => 
+    matchesRoute(pattern, path) && methods.includes(method)
+  )
 }
 
 function requiresAdmin(path: string, method: string): boolean {
