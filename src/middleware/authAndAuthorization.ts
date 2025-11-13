@@ -85,9 +85,19 @@ const ASSET_PATTERNS = [
 ]
 
 function extractToken(req: Request): string | null {
+  console.log('[extractToken] Headers recebidos:', {
+    authorization: req.header('authorization'),
+    cookie: req.headers.cookie,
+    hasQuery: !!req.query.access_token
+  })
+
   // 1. Header Authorization
   const auth = req.header('authorization')
-  if (auth) return auth.replace(/^Bearer\s+/i, '')
+  if (auth) {
+    const token = auth.replace(/^Bearer\s+/i, '')
+    console.log('[extractToken] Token encontrado no Authorization header')
+    return token
+  }
 
   // 2. Cookie accessToken
   if (req.headers.cookie) {
@@ -98,16 +108,25 @@ function extractToken(req: Request): string | null {
           return [k, decodeURIComponent(v.join('='))]
         })
       )
-      if (cookies.accessToken) return cookies.accessToken
-    } catch {
-      // ignore parse errors
+      console.log('[extractToken] Cookies parseados:', Object.keys(cookies))
+      
+      if (cookies.accessToken) {
+        console.log('[extractToken] Token encontrado no cookie accessToken')
+        return cookies.accessToken
+      }
+    } catch (error) {
+      console.error('[extractToken] Erro ao parsear cookies:', error)
     }
   }
 
   // 3. Query param
   const query = req.query as Record<string, string>
-  if (query.access_token) return query.access_token
+  if (query.access_token) {
+    console.log('[extractToken] Token encontrado no query param')
+    return query.access_token
+  }
 
+  console.log('[extractToken] Nenhum token encontrado')
   return null
 }
 
@@ -165,8 +184,11 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
   const path = req.originalUrl.split('?')[0]
   const method = req.method
   
+  console.log(`[authMiddleware] ${method} ${path}`)
+  
   // 1. ÚNICA EXCEÇÃO: Rotas realmente públicas (sem token)
   if (isPublicRoute(path, method)) {
+    console.log(`[authMiddleware] Rota pública, pulando autenticação`)
     next()
     return
   }
@@ -175,10 +197,13 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
   const token = extractToken(req)
   
   if (!token) {
+    console.log(`[authMiddleware] Token não encontrado para ${path}`)
     userReq.log?.warn({ path, msg: 'auth_missing_header' }, 'Missing Authorization header')
     res.status(401).json({ error: 'missing_authorization_header' })
     return
   }
+
+  console.log(`[authMiddleware] Token encontrado, validando...`)
 
   let payload: JwtPayload
   try {
