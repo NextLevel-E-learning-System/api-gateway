@@ -10,6 +10,7 @@ interface JwtPayload {
 
 interface RequestWithUser extends Request {
   user?: JwtPayload
+  token?: string  // ✅ Adicionar token extraído
   log?: {
     debug: (data: object, message: string) => void
     warn: (data: object, message: string) => void
@@ -203,10 +204,13 @@ export function authAndAuthorizationMiddleware(req: Request, res: Response, next
       payload = verifyToken(token)
     }
     
+    // ✅ Injetar headers para serviços downstream
     res.setHeader('x-user-id', payload.sub)
     res.setHeader('x-user-role', payload.roles || 'FUNCIONARIO')
     
+    // ✅ Armazenar token e user no request para o proxy usar
     userReq.user = payload
+    userReq.token = token
   } catch (e) {
     const error = e as Error
     userReq.log?.warn(

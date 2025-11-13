@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express'
 
 interface RequestWithUser extends Request {
   user?: { sub: string; roles?: string }
+  token?: string  // ✅ Token extraído do cookie
   log?: {
     debug: (data: object, message: string) => void
     error: (data: object, message: string) => void
@@ -52,16 +53,23 @@ export function proxyRouter(envVar: string, servicePrefix: string) {
         headers[headerKey] = Array.isArray(value) ? value.join(',') : String(value)
       }
       
+      // ✅ CRUCIAL: Injetar o token do cookie no header Authorization
+      if (userReq.token) {
+        headers['authorization'] = `Bearer ${userReq.token}`
+      }
+      
       // Adicionar headers de contexto
       if (userReq.correlationId) {
         headers['x-correlation-id'] = userReq.correlationId
       }
       
       if (userReq.user) {
-        const userRole = userReq.user.roles
+        headers['x-user-id'] = userReq.user.sub
+        headers['x-user-role'] = userReq.user.roles || 'FUNCIONARIO'
+        
         headers['x-user-data'] = Buffer.from(JSON.stringify({
           sub: userReq.user.sub,
-          roles: userRole
+          roles: userReq.user.roles
         })).toString('base64')
       }
       
