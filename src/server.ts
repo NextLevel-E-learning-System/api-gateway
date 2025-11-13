@@ -1,5 +1,6 @@
 import express from 'express'
 import cors from 'cors'
+import cookieParser from 'cookie-parser'
 import swaggerUi from 'swagger-ui-express'
 import { logger } from './config/logger.js'
 import { correlationId } from './middleware/correlationId.js'
@@ -22,6 +23,7 @@ export function createServer() {
   // Configuração básica
   app.use(express.json({ limit: '50mb' }))
   app.use(express.urlencoded({ limit: '50mb', extended: true }))
+  app.use(cookieParser())
   
   // CORS
   const allowAll = process.env.ALLOW_ALL_ORIGINS === 'true'
