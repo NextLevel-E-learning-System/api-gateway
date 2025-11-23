@@ -45,17 +45,6 @@ const AUTH_CONFIG = {
     methods: ['POST', 'PUT', 'PATCH', 'DELETE'],
   },
 
-  // Padrões que requerem ADMIN para CRUD
-  gerenteRequired: {
-    patterns: [
-      '/users/v1/funcionarios/departamento',
-      '/courses/v1/categorias', // Gerenciar categorias
-      '/users/v1/funcionarios/*/role', // Gerenciar roles de usuários
-      '/reports/departamento', // Relatórios departamentais
-    ],
-    methods: ['POST', 'PUT', 'PATCH', 'DELETE'],
-  },
-
   // Padrões que requerem INSTRUTOR ou ADMIN para CRUD
   instructorRequired: {
     patterns: [
@@ -172,12 +161,6 @@ function requiresInstructor(path: string, method: string): boolean {
   return patterns.some(pattern => matchesRoute(pattern, path) && methods.includes(method))
 }
 
-function requiresGerente(path: string, method: string): boolean {
-  // GERENTE pode fazer algumas operações específicas
-  const { patterns, methods } = AUTH_CONFIG.gerenteRequired
-  return patterns.some(pattern => matchesRoute(pattern, path) && methods.includes(method))
-}
-
 // MIDDLEWARE UNIFICADO SIMPLES - AUTENTICAÇÃO + AUTORIZAÇÃO
 export function authAndAuthorizationMiddleware(
   req: Request,
@@ -274,19 +257,6 @@ export function authAndAuthorizationMiddleware(
         required: 'INSTRUTOR ou ADMIN',
         current: userRole,
         message: 'Esta operação requer privilégios de instrutor ou administrador',
-      })
-      return
-    }
-  }
-
-  // Requer GERENTE para estas operações?
-  else if (requiresGerente(path, method)) {
-    if (userRole !== 'GERENTE' && userRole !== 'ADMIN') {
-      res.status(403).json({
-        error: 'insufficient_permissions',
-        required: 'GERENTE ou ADMIN',
-        current: userRole,
-        message: 'Esta operação requer privilégios de gerente ou administrador',
       })
       return
     }
