@@ -212,5 +212,9 @@ Este projeto é parte do sistema NextLevel E-learning.
 
 ## 🔗 Links Relacionados
 
-- [Documentação da API](http://localhost:3333/docs) (quando o servidor estiver rodando)
-- [Especificação OpenAPI](http://localhost:3333/openapi.json)
+Quando o servidor estiver rodando localmente:
+
+- **Documentação da API**: `http://localhost:3333/docs`
+- **Especificação OpenAPI**: `http://localhost:3333/openapi.json`
+
+> **Nota**: As URLs acima são para desenvolvimento local. Em produção, substitua `localhost:3333` pelo domínio do seu gateway.
